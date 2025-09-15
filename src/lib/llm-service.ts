@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { db } from "@/lib/db";
 import { user, transactions, categories, agentCommands } from "@/lib/schema";
-import { eq, and, gte } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { categorizationService } from "./categorization-service";
 import { dateParser } from "./date-parser";
@@ -47,6 +47,8 @@ export class LLMService {
     saveToHistory: boolean = true
   ): Promise<LLMResponse> {
     try {
+      // Limpar contextos expirados periodicamente
+      contextService.cleanupExpiredContexts();
       // Verificar se é uma resposta a uma transação pendente usando LLM
       const isResponseToTransaction =
         await contextService.isResponseToPendingTransaction(userId, message);
@@ -72,14 +74,15 @@ export class LLMService {
       // Salvar no histórico se solicitado
       if (saveToHistory) {
         await this.saveToHistory(userId, message, response);
-        // Atualizar contexto de conversa
-        contextService.createOrUpdateConversationContext(
-          userId,
-          message,
-          response.message,
-          response.action
-        );
       }
+
+      // Sempre atualizar contexto de conversa para manter memória
+      contextService.createOrUpdateConversationContext(
+        userId,
+        message,
+        response.message,
+        response.action
+      );
 
       return response;
     } catch (error) {
@@ -172,6 +175,12 @@ export class LLMService {
     context: UserContext,
     message: string
   ): Promise<LLMResponse> {
+    // Detectar consultas de relatórios/fluxo de caixa primeiro
+    const reportCommand = this.detectReportCommand(message);
+    if (reportCommand) {
+      return this.handleReportCommand(context.userId, reportCommand);
+    }
+
     // Verificar se é um comando de registro de transação
     const transactionCommand = await this.detectTransactionCommand(message);
     if (transactionCommand) {
@@ -183,6 +192,12 @@ export class LLMService {
     if (categorizationCommand) {
       return this.handleCategorizationCommand(context, categorizationCommand);
     }
+
+    // Obter histórico de conversa recente
+    const recentHistory = contextService.getRecentConversationHistory(
+      context.userId,
+      5
+    );
 
     const systemPrompt = `Você é o "Fala Chefe!", um assistente de IA especializado em gestão financeira para pequenos empresários brasileiros.
 
@@ -197,6 +212,20 @@ CONTEXTO DO USUÁRIO:
       "Nenhuma categoria criada"
     }
 
+HISTÓRICO DA CONVERSA RECENTE:
+${
+  recentHistory.length > 0
+    ? recentHistory
+        .map(
+          (h, i) =>
+            `${i + 1}. Usuário: "${h.userMessage}"\n   Assistente: "${
+              h.systemResponse
+            }"`
+        )
+        .join("\n")
+    : "Nenhuma conversa anterior encontrada."
+}
+
 INSTRUÇÕES:
 1. Responda sempre em português brasileiro, de forma amigável e profissional
 2. Use emojis para tornar as respostas mais amigáveis
@@ -204,6 +233,9 @@ INSTRUÇÕES:
 4. Seja proativo - sugira ações que podem ajudar o usuário
 5. Se não entender o comando, peça esclarecimentos de forma educada
 6. Sempre que possível, forneça dados específicos baseados no contexto do usuário
+7. **IMPORTANTE**: Considere o histórico da conversa para manter contexto e continuidade
+8. Faça referência a conversas anteriores quando relevante para dar melhor suporte
+9. Se o usuário fizer perguntas relacionadas a tópicos já discutidos, use esse contexto
 
 COMANDOS QUE VOCÊ PODE PROCESSAR:
 - Registrar receitas e despesas (com validação de campos obrigatórios)
@@ -222,9 +254,15 @@ FORMATO DE RESPOSTA:
 - Inclua ações sugeridas quando apropriado
 - Seja específico com valores e datas quando possível`;
 
-    const userPrompt = `Mensagem do usuário: "${message}"
+    const userPrompt = `Mensagem atual do usuário: "${message}"
 
-Com base no contexto acima, processe esta mensagem e forneça uma resposta útil e acionável.`;
+Com base no contexto do usuário e no histórico da conversa acima, processe esta mensagem e forneça uma resposta útil e acionável. 
+
+${
+  recentHistory.length > 0
+    ? "IMPORTANTE: Considere as mensagens anteriores para manter continuidade na conversa e fornecer respostas mais contextualizadas."
+    : "Esta é a primeira mensagem da conversa."
+}`;
 
     try {
       const result = await generateText({
@@ -965,8 +1003,14 @@ Com base no contexto acima, processe esta mensagem e forneça uma resposta útil
     command: string,
     commandType: "finance" | "marketing" | "sales" | "general"
   ): Promise<LLMResponse> {
-    // Buscar contexto do usuário
+    // Buscar contexto do usuário para validação
     await this.getUserContext(userId);
+
+    // Obter histórico de conversa recente para comandos de negócio
+    const recentHistory = contextService.getRecentConversationHistory(
+      userId,
+      3
+    );
 
     let specializedPrompt = "";
 
@@ -984,7 +1028,21 @@ Com base no contexto acima, processe esta mensagem e forneça uma resposta útil
         specializedPrompt = `Forneça conselhos gerais de negócios e gestão empresarial.`;
     }
 
-    const enhancedMessage = `${specializedPrompt}\n\nComando do usuário: "${command}"`;
+    let enhancedMessage = `${specializedPrompt}\n\nComando do usuário: "${command}"`;
+
+    // Incluir contexto da conversa se houver histórico relevante
+    if (recentHistory.length > 0) {
+      const historyContext = recentHistory
+        .map(
+          (h, i) =>
+            `${i + 1}. Usuário: "${h.userMessage}"\n   Assistente: "${
+              h.systemResponse
+            }"`
+        )
+        .join("\n");
+
+      enhancedMessage += `\n\nCONTEXTO DA CONVERSA ANTERIOR:\n${historyContext}\n\nConsidere este contexto ao responder.`;
+    }
 
     return this.processUserMessage(userId, enhancedMessage);
   }
@@ -1241,6 +1299,260 @@ Com base no contexto acima, processe esta mensagem e forneça uma resposta útil
       .toLowerCase()
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "");
+  }
+
+  // =====================
+  // Relatórios / Consultas
+  // =====================
+  private detectReportCommand(message: string): {
+    type:
+      | "cashflow_summary"
+      | "expenses_by_category"
+      | "revenues_by_category"
+      | "list_transactions";
+    days?: number; // período em dias (default 30)
+  } | null {
+    const text = this.normalize(message);
+
+    // Período
+    let days: number | undefined;
+    const lastNDaysMatch = text.match(/ultimos?\s+(\d{1,3})\s+dias?/);
+    if (lastNDaysMatch) {
+      days = parseInt(lastNDaysMatch[1], 10);
+    } else if (text.includes("mes atual") || text.includes("mês atual")) {
+      // Trataremos no handler como mês atual
+      days = undefined;
+    }
+
+    // Despesas por categoria
+    if (
+      (text.includes("despesa") && text.includes("categoria")) ||
+      text.includes("despesas por categoria")
+    ) {
+      return { type: "expenses_by_category", days: days ?? 30 };
+    }
+
+    // Receitas por categoria
+    if (
+      (text.includes("receita") && text.includes("categoria")) ||
+      text.includes("receitas por categoria")
+    ) {
+      return { type: "revenues_by_category", days: days ?? 30 };
+    }
+
+    // Resumo de fluxo de caixa
+    if (
+      text.includes("fluxo de caixa") ||
+      text.includes("resumo financeiro") ||
+      text.includes("saldo atual")
+    ) {
+      return { type: "cashflow_summary", days: days ?? 30 };
+    }
+
+    // Listar transações
+    if (
+      text.includes("listar transacoes") ||
+      text.includes("listar transações") ||
+      text.includes("consultar registros") ||
+      text.includes("consultar transacoes") ||
+      text.includes("consultar transações")
+    ) {
+      return { type: "list_transactions", days: days ?? 30 };
+    }
+
+    return null;
+  }
+
+  private async handleReportCommand(
+    userId: string,
+    command: {
+      type:
+        | "cashflow_summary"
+        | "expenses_by_category"
+        | "revenues_by_category"
+        | "list_transactions";
+      days?: number;
+    }
+  ): Promise<LLMResponse> {
+    // Período
+    const now = new Date();
+    let startDate: Date;
+    const endDate: Date = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59
+    );
+
+    if (!command.days && command.days !== 0) {
+      // Se não especificado, usar mês atual
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    } else {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - (command.days ?? 30));
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    // Buscar dados conforme o tipo
+    if (command.type === "cashflow_summary") {
+      const tx = await db
+        .select({ amount: transactions.amount, type: transactions.type })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            gte(transactions.transactionDate, startDate),
+            lte(transactions.transactionDate, endDate)
+          )
+        );
+
+      const totalReceitas = tx
+        .filter((t) => t.type === "receita")
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const totalDespesas = tx
+        .filter((t) => t.type === "despesa")
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const message =
+        `📊 **Resumo do Fluxo de Caixa (${dateParser.formatDate(
+          startDate
+        )} → ${dateParser.formatDate(endDate)})**\n\n` +
+        `- Receitas: **R$ ${totalReceitas.toFixed(2)}**\n` +
+        `- Despesas: **R$ ${totalDespesas.toFixed(2)}**\n` +
+        `- Saldo: **R$ ${(totalReceitas - totalDespesas).toFixed(2)}**\n` +
+        `- Transações: **${tx.length}**\n`;
+
+      return {
+        success: true,
+        message,
+        metadata: { type: "cashflow_summary", startDate, endDate },
+      };
+    }
+
+    if (
+      command.type === "expenses_by_category" ||
+      command.type === "revenues_by_category"
+    ) {
+      const targetType =
+        command.type === "expenses_by_category" ? "despesa" : "receita";
+
+      const rows = await db
+        .select({
+          categoryId: transactions.categoryId,
+          amount: transactions.amount,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            eq(transactions.type, targetType),
+            gte(transactions.transactionDate, startDate),
+            lte(transactions.transactionDate, endDate)
+          )
+        );
+
+      // Carregar nomes de categorias
+      const cats = await db
+        .select({ id: categories.id, name: categories.name })
+        .from(categories)
+        .where(eq(categories.userId, userId));
+
+      const idToName: Record<string, string> = {};
+      cats.forEach((c) => (idToName[c.id] = c.name));
+
+      const totals = new Map<string, number>();
+      rows.forEach((r) => {
+        const key = r.categoryId
+          ? idToName[r.categoryId] || "Sem categoria"
+          : "Sem categoria";
+        const current = totals.get(key) ?? 0;
+        totals.set(key, current + parseFloat(r.amount));
+      });
+
+      const sorted = Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
+      const header = `| Categoria | Total (R$) |\n|---|---:|\n`;
+      const body =
+        sorted.length > 0
+          ? sorted
+              .map(([name, total]) => `| ${name} | ${total.toFixed(2)} |`)
+              .join("\n")
+          : `| - | 0,00 |`;
+
+      const title =
+        command.type === "expenses_by_category"
+          ? "Despesas por Categoria"
+          : "Receitas por Categoria";
+
+      const message = `📚 **${title} (${dateParser.formatDate(
+        startDate
+      )} → ${dateParser.formatDate(endDate)})**\n\n${header}${body}`;
+
+      return {
+        success: true,
+        message,
+        metadata: { type: command.type, startDate, endDate },
+      };
+    }
+
+    if (command.type === "list_transactions") {
+      const rows = await db
+        .select({
+          description: transactions.description,
+          amount: transactions.amount,
+          type: transactions.type,
+          date: transactions.transactionDate,
+          categoryId: transactions.categoryId,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            gte(transactions.transactionDate, startDate),
+            lte(transactions.transactionDate, endDate)
+          )
+        )
+        .orderBy(transactions.transactionDate);
+
+      const cats = await db
+        .select({ id: categories.id, name: categories.name })
+        .from(categories)
+        .where(eq(categories.userId, userId));
+      const idToName: Record<string, string> = {};
+      cats.forEach((c) => (idToName[c.id] = c.name));
+
+      const header = `| Data | Descrição | Tipo | Categoria | Valor (R$) |\n|---|---|---|---|---:|\n`;
+      const body =
+        rows.length > 0
+          ? rows
+              .map((r) => {
+                const date = dateParser.formatDate(r.date);
+                const cat = r.categoryId ? idToName[r.categoryId] || "-" : "-";
+                return `| ${date} | ${r.description} | ${
+                  r.type
+                } | ${cat} | ${parseFloat(r.amount).toFixed(2)} |`;
+              })
+              .join("\n")
+          : `| - | - | - | - | 0,00 |`;
+
+      const message = `🧾 **Transações (${dateParser.formatDate(
+        startDate
+      )} → ${dateParser.formatDate(endDate)})**\n\n${header}${body}`;
+
+      return {
+        success: true,
+        message,
+        metadata: { type: "list_transactions", startDate, endDate },
+      };
+    }
+
+    // Caso não caia em nenhum
+    return {
+      success: false,
+      message: "❌ Não consegui entender o tipo de relatório solicitado.",
+      action: "report_error",
+    };
   }
 
   private inferCategoryFromDescription(

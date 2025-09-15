@@ -8,5 +8,7 @@ if (!connectionString) {
   throw new Error("POSTGRES_URL environment variable is not set");
 }
 
+// Configurar cliente postgres com configuração padrão para Supabase
 const client = postgres(connectionString);
+
 export const db = drizzle(client, { schema });

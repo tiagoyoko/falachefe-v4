@@ -15,6 +15,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -291,6 +292,7 @@ export function LLMChatInterface({
               >
                 <div className="prose prose-sm max-w-none">
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                       p: ({ children }) => (
                         <p className="mb-2 last:mb-0">{children}</p>
@@ -311,6 +313,24 @@ export function LLMChatInterface({
                         <code className="bg-muted-foreground/10 px-1 py-0.5 rounded text-sm">
                           {children}
                         </code>
+                      ),
+                      table: ({ children }) => (
+                        <table className="table-auto w-full border-collapse my-2 text-sm">
+                          {children}
+                        </table>
+                      ),
+                      thead: ({ children }) => (
+                        <thead className="bg-muted/50">{children}</thead>
+                      ),
+                      th: ({ children }) => (
+                        <th className="border px-2 py-1 text-left font-semibold">
+                          {children}
+                        </th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="border px-2 py-1 align-top">
+                          {children}
+                        </td>
                       ),
                     }}
                   >
