@@ -175,6 +175,12 @@ export class LLMService {
     context: UserContext,
     message: string
   ): Promise<LLMResponse> {
+    // Consultas simples (responder sem LLM)
+    const simpleQuery = this.detectSimpleQuery(message);
+    if (simpleQuery) {
+      return this.handleSimpleQuery(context, simpleQuery);
+    }
+
     // Detectar consultas de relatórios/fluxo de caixa primeiro
     const reportCommand = this.detectReportCommand(message);
     if (reportCommand) {
@@ -1299,6 +1305,65 @@ ${
       .toLowerCase()
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "");
+  }
+
+  private detectSimpleQuery(
+    message: string
+  ): "user_name" | "user_email" | "current_balance" | null {
+    const text = this.normalize(message);
+    if (
+      text.includes("qual o meu nome") ||
+      text.includes("qual meu nome") ||
+      text.includes("meu nome")
+    ) {
+      return "user_name";
+    }
+    if (text.includes("meu email") || text.includes("qual meu email")) {
+      return "user_email";
+    }
+    if (text.includes("saldo atual") || text.includes("meu saldo")) {
+      return "current_balance";
+    }
+    return null;
+  }
+
+  private handleSimpleQuery(
+    context: UserContext,
+    type: "user_name" | "user_email" | "current_balance"
+  ): LLMResponse {
+    if (type === "user_name") {
+      if (context.userName) {
+        return {
+          success: true,
+          message: `Seu nome é **${context.userName}**. 😊`,
+        };
+      }
+      return {
+        success: false,
+        message:
+          "❌ Não encontrei seu nome no cadastro. Tente sair e entrar novamente.",
+      };
+    }
+    if (type === "user_email") {
+      if (context.userEmail) {
+        return {
+          success: true,
+          message: `Seu e-mail é **${context.userEmail}**. ✉️`,
+        };
+      }
+      return {
+        success: false,
+        message:
+          "❌ Não encontrei seu e-mail no cadastro. Tente sair e entrar novamente.",
+      };
+    }
+    // current_balance
+    const balance = context.totalBalance ?? 0;
+    return {
+      success: true,
+      message: `Seu saldo atual é **R$ ${balance.toFixed(2)}**. 💰`,
+      metadata: { type: "current_balance" },
+    };
   }
 
   // =====================
