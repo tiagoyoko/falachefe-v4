@@ -3,18 +3,47 @@
 import { useSession } from "@/lib/auth-client";
 import { UserProfile } from "@/components/auth/user-profile";
 import { Button } from "@/components/ui/button";
-import { Lock } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
 import { useDiagnostics } from "@/hooks/use-diagnostics";
+import { useOnboarding } from "@/hooks/use-onboarding";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
   const { data: session, isPending } = useSession();
   const { isAiReady, loading: diagnosticsLoading } = useDiagnostics();
+  const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
+  const router = useRouter();
 
-  if (isPending) {
+  // Redirecionar para onboarding se necessário
+  useEffect(() => {
+    if (!isPending && !onboardingLoading && needsOnboarding) {
+      router.push("/onboarding");
+    }
+  }, [isPending, onboardingLoading, needsOnboarding, router]);
+
+  if (isPending || onboardingLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         Loading...
+      </div>
+    );
+  }
+
+  // Se precisa fazer onboarding, mostrar uma tela de redirecionamento
+  if (needsOnboarding) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">
+            Redirecionando para configuração...
+          </p>
+          <Button onClick={() => router.push("/onboarding")}>
+            Ir para Configuração
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
       </div>
     );
   }
@@ -48,10 +77,8 @@ export default function DashboardPage() {
           <p className="text-muted-foreground mb-4">
             Start a conversation with AI using the Vercel AI SDK
           </p>
-          {(diagnosticsLoading || !isAiReady) ? (
-            <Button disabled={true}>
-              Go to Chat
-            </Button>
+          {diagnosticsLoading || !isAiReady ? (
+            <Button disabled={true}>Go to Chat</Button>
           ) : (
             <Button asChild>
               <Link href="/chat">Go to Chat</Link>

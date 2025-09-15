@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { UserProfile } from "@/components/auth/user-profile";
 import { ModeToggle } from "./ui/mode-toggle";
-import { Bot } from "lucide-react";
+import { Bot, MessageSquare, Wallet } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 export function SiteHeader() {
+  const { data: session } = useSession();
+  const isLoggedIn = Boolean(session);
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -16,11 +21,32 @@ export function SiteHeader() {
               <Bot className="h-5 w-5" />
             </div>
             <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Starter Kit
+              Fala Chefe!
             </span>
           </Link>
         </h1>
         <div className="flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-4">
+            {isLoggedIn && (
+              <>
+                <Link
+                  href="/chat"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Conversar
+                </Link>
+                <Link
+                  href="/cashflow"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Wallet className="h-4 w-4" />
+                  Financeiro
+                </Link>
+              </>
+            )}
+            {/* Marketing permanece oculto até existir a página */}
+          </nav>
           <UserProfile />
           <ModeToggle />
         </div>

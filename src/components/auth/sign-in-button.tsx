@@ -19,11 +19,11 @@ export function SignInButton() {
       onClick={async () => {
         await signIn.social({
           provider: "google",
-          callbackURL: "/dashboard",
+          callbackURL: "/dashboard", // O dashboard já vai redirecionar para onboarding se necessário
         });
       }}
     >
-      Sign in
+      Entrar com Google
     </Button>
   );
 }

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agentic Coding Boilerplate",
+  title: "Fala Chefe!",
   description:
-    "Complete agentic coding boilerplate with authentication, database, AI integration, and modern tooling - perfect for building AI-powered applications and autonomous agents by Leon van Zyl",
+    "Seu time de agentes de IA no WhatsApp para Marketing, Vendas e Financeiro. Conversas naturais, respostas proativas e execução prática para pequenos negócios.",
 };
 
 export default function RootLayout({
@@ -40,6 +41,7 @@ export default function RootLayout({
           <SiteHeader />
           {children}
           <SiteFooter />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

@@ -1,234 +1,207 @@
-# Agentic Coding Boilerplate
+# Fala Chefe! 🤖
 
-A complete agentic coding boilerplate with authentication, PostgreSQL database, AI chat functionality, and modern UI components - perfect for building AI-powered applications and autonomous agents.
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![React](https://img.shields.io/badge/React-19-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
 
-## 🚀 Features
+**Seu time de agentes de IA no WhatsApp para automatizar Marketing, Vendas e Finanças**
 
-- **🔐 Authentication**: Better Auth with Google OAuth integration
-- **🗃️ Database**: Drizzle ORM with PostgreSQL
-- **🤖 AI Integration**: Vercel AI SDK with OpenAI support
-- **🎨 UI Components**: shadcn/ui with Tailwind CSS
-- **⚡ Modern Stack**: Next.js 15, React 19, TypeScript
-- **📱 Responsive**: Mobile-first design approach
+Uma plataforma inovadora projetada especificamente para pequenos e micro empresários no Brasil, oferecendo automação de negócios através de agentes de IA especializados que interagem via WhatsApp.
 
-## 🎥 Video Tutorial
+## 🚀 Características Principais
 
-Watch the complete walkthrough of this agentic coding template:
+- **💬 Interação Natural**: Comandos por texto ou áudio via WhatsApp
+- **🎯 Agentes Especializados**: Marketing, Vendas e Financeiro
+- **🧠 IA Proativa**: Insights e lembretes automáticos
+- **📊 Gestão Completa**: Fluxo de caixa, categorização e relatórios
+- **🔄 Onboarding Inteligente**: Configuração personalizada por segmento
 
-[![Agentic Coding Boilerplate Tutorial](https://img.youtube.com/vi/T0zFZsr_d0Q/maxresdefault.jpg)](https://youtu.be/T0zFZsr_d0Q)
+## 🛠️ Stack Tecnológico
 
-<a href="https://youtu.be/T0zFZsr_d0Q" target="_blank" rel="noopener noreferrer">🔗 Watch on YouTube</a>
+### Frontend
+- **Next.js 15** com App Router
+- **React 19** com hooks modernos
+- **TypeScript** para tipagem estática
+- **Tailwind CSS** para estilização
+- **shadcn/ui** para componentes
 
-## ☕ Support This Project
+### Backend
+- **Next.js API Routes** para endpoints
+- **Better Auth** para autenticação
+- **Drizzle ORM** para banco de dados
+- **PostgreSQL** como banco principal
 
-If this boilerplate helped you build something awesome, consider buying me a coffee!
+### Integrações
+- **Google OAuth** para autenticação
+- **Vercel AI SDK** para processamento de IA
+- **OpenAI** para comandos de linguagem natural
 
-[![Buy me a coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/leonvanzyl)
+## 🎯 Funcionalidades Implementadas
 
-## 📋 Prerequisites
+### ✅ Sistema de Onboarding Completo
+- **4 etapas** de configuração
+- **Captura de dados** da empresa
+- **Configuração de categorias** de receitas/despesas
+- **Validação completa** e feedback visual
+- **Redirecionamento condicional** automático
 
-Before you begin, ensure you have the following installed on your machine:
+### ✅ Autenticação e Usuários
+- Login com Google OAuth
+- Gerenciamento de sessões
+- Proteção de rotas
 
-- **Node.js**: Version 18.0 or higher (<a href="https://nodejs.org/" target="_blank">Download here</a>)
-- **Git**: For cloning the repository (<a href="https://git-scm.com/" target="_blank">Download here</a>)
-- **PostgreSQL**: Either locally installed or access to a hosted service like Vercel Postgres
+### ✅ Interface Moderna
+- Design responsivo mobile-first
+- Componentes shadcn/ui
+- Toast notifications
+- Loading states e animações
 
-## 🛠️ Quick Setup
+## 🚀 Como Executar
 
-### 1. Clone or Download the Repository
-
-**Option A: Clone with Git**
-
+### Pré-requisitos
 ```bash
-git clone https://github.com/leonvanzyl/agentic-coding-starter-kit.git
-cd agentic-coding-starter-kit
+Node.js 18+ 
+npm ou pnpm
+PostgreSQL
 ```
 
-**Option B: Download ZIP**
-Download the repository as a ZIP file and extract it to your desired location.
-
-### 2. Install Dependencies
-
+### Instalação
 ```bash
-npm install
+# Clone o repositório
+git clone https://github.com/[seu-usuario]/falachefe-v4.git
+cd falachefe-v4
+
+# Instale as dependências
+pnpm install
+
+# Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o .env com suas configurações
+
+# Execute as migrações do banco
+pnpm db:migrate
+
+# Inicie o servidor de desenvolvimento
+pnpm dev
 ```
 
-### 3. Environment Setup
-
-Copy the example environment file:
-
-```bash
-cp env.example .env
-```
-
-Fill in your environment variables in the `.env` file:
-
+### Variáveis de Ambiente
 ```env
 # Database
-POSTGRES_URL="postgresql://username:password@localhost:5432/your_database_name"
+DATABASE_URL="sua-url-do-postgres"
 
-# Authentication - Better Auth
-BETTER_AUTH_SECRET="your-random-32-character-secret-key-here"
+# Auth
+BETTER_AUTH_SECRET="seu-secret-key"
+GOOGLE_CLIENT_ID="seu-google-client-id"
+GOOGLE_CLIENT_SECRET="seu-google-client-secret"
 
-# Google OAuth (Get from Google Cloud Console)
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-
-# AI Integration (Optional - for chat functionality)
-OPENAI_API_KEY="sk-your-openai-api-key-here"
-OPENAI_MODEL="gpt-5-mini"
-
-# App URL (for production deployments)
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+# AI
+OPENAI_API_KEY="sua-openai-api-key"
 ```
 
-### 4. Database Setup
-
-Generate and run database migrations:
-
-```bash
-npm run db:generate
-npm run db:migrate
-```
-
-### 5. Start the Development Server
-
-```bash
-npm run dev
-```
-
-Your application will be available at [http://localhost:3000](http://localhost:3000)
-
-## ⚙️ Service Configuration
-
-### PostgreSQL Database on Vercel
-
-1. Go to <a href="https://vercel.com/dashboard" target="_blank">Vercel Dashboard</a>
-2. Navigate to the **Storage** tab
-3. Click **Create** → **Postgres**
-4. Choose your database name and region
-5. Copy the `POSTGRES_URL` from the `.env.local` tab
-6. Add it to your `.env` file
-
-### Google OAuth Credentials
-
-1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
-2. Create a new project or select an existing one
-3. Navigate to **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
-4. Set application type to **Web application**
-5. Add authorized redirect URIs:
-   - `http://localhost:3000/api/auth/callback/google` (development)
-   - `https://yourdomain.com/api/auth/callback/google` (production)
-6. Copy the **Client ID** and **Client Secret** to your `.env` file
-
-### OpenAI API Key
-
-1. Go to <a href="https://platform.openai.com/dashboard" target="_blank">OpenAI Platform</a>
-2. Navigate to **API Keys** in the sidebar
-3. Click **Create new secret key**
-4. Give it a name and copy the key
-5. Add it to your `.env` file as `OPENAI_API_KEY`
-
-## 🗂️ Project Structure
+## 📁 Estrutura do Projeto
 
 ```
 src/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   │   ├── auth/          # Authentication endpoints
-│   │   └── chat/          # AI chat endpoint
-│   ├── chat/              # AI chat page
-│   ├── dashboard/         # User dashboard
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── auth/             # Authentication components
-│   └── ui/               # shadcn/ui components
-└── lib/                  # Utilities and configurations
-    ├── auth.ts           # Better Auth configuration
-    ├── auth-client.ts    # Client-side auth utilities
-    ├── db.ts             # Database connection
-    ├── schema.ts         # Database schema
-    └── utils.ts          # General utilities
+├── app/                    # App Router do Next.js
+│   ├── api/               # API Routes
+│   │   ├── onboarding/    # APIs do onboarding
+│   │   ├── categories/    # Gerenciamento de categorias
+│   │   └── transactions/  # Transações financeiras
+│   ├── onboarding/        # Páginas do onboarding
+│   ├── dashboard/         # Dashboard principal
+│   └── chat/              # Chat com IA
+├── components/            # Componentes React
+│   ├── onboarding/       # Componentes do onboarding
+│   ├── auth/             # Componentes de autenticação
+│   └── ui/               # Componentes shadcn/ui
+├── hooks/                # Custom hooks
+└── lib/                  # Utilitários e configurações
 ```
 
-## 🔧 Available Scripts
+## 🎨 Componentes de Onboarding
+
+### OnboardingFlow
+Orquestrador principal que gerencia todo o fluxo de configuração.
+
+### OnboardingWelcome
+Tela de boas-vindas com seleção de áreas de interesse.
+
+### CompanyInfoForm
+Formulário completo para informações da empresa.
+
+### CategoriesSetup
+Configuração inteligente de categorias baseada no segmento.
+
+### OnboardingCompletion
+Tela de conclusão com animação de progresso.
+
+## 🔧 Scripts Disponíveis
 
 ```bash
-npm run dev          # Start development server with Turbopack
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run db:generate  # Generate database migrations
-npm run db:migrate   # Run database migrations
-npm run db:push      # Push schema changes to database
-npm run db:studio    # Open Drizzle Studio (database GUI)
-npm run db:dev       # Push schema for development
-npm run db:reset     # Reset database (drop all tables)
+# Desenvolvimento
+pnpm dev          # Servidor de desenvolvimento
+pnpm build        # Build de produção
+pnpm start        # Servidor de produção
+
+# Qualidade de código
+pnpm lint         # ESLint
+pnpm typecheck    # TypeScript check
+
+# Banco de dados
+pnpm db:push      # Push do schema
+pnpm db:studio    # Drizzle Studio
 ```
 
-## 📖 Pages Overview
+## 📊 Banco de Dados
 
-- **Home (`/`)**: Landing page with setup instructions and features overview
-- **Dashboard (`/dashboard`)**: Protected user dashboard with profile information
-- **Chat (`/chat`)**: AI-powered chat interface using OpenAI (requires authentication)
+### Principais Tabelas
+- **users**: Usuários do sistema
+- **companies**: Informações das empresas
+- **onboardingPreferences**: Preferências do onboarding
+- **categories**: Categorias de receitas/despesas
+- **transactions**: Transações financeiras
+- **userSettings**: Configurações do usuário
 
-## 🚀 Deployment
+## 🎯 Próximos Passos
 
-### Deploy to Vercel (Recommended)
+### Curto Prazo
+- [ ] Integração com WhatsApp
+- [ ] Sistema de lembretes
+- [ ] Dashboard financeiro
+- [ ] Relatórios básicos
 
-1. Install the Vercel CLI globally:
+### Médio Prazo
+- [ ] Agentes especializados (Marketing, Vendas)
+- [ ] IA proativa para insights
+- [ ] Integrações bancárias
+- [ ] Backup e sincronização
 
-   ```bash
-   npm install -g vercel
-   ```
+### Longo Prazo
+- [ ] Marketplace de serviços
+- [ ] Analytics avançados
+- [ ] API pública
+- [ ] Mobile app
 
-2. Deploy your application:
+## 🤝 Contribuindo
 
-   ```bash
-   vercel --prod
-   ```
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
-3. Follow the prompts to configure your deployment
-4. Add your environment variables when prompted or via the Vercel dashboard
+## 📄 Licença
 
-### Production Environment Variables
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-Ensure these are set in your production environment:
+## 🆘 Suporte
 
-- `POSTGRES_URL` - Production PostgreSQL connection string
-- `BETTER_AUTH_SECRET` - Secure random 32+ character string
-- `GOOGLE_CLIENT_ID` - Google OAuth Client ID
-- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret
-- `OPENAI_API_KEY` - OpenAI API key (optional)
-- `OPENAI_MODEL` - OpenAI model name (optional, defaults to gpt-5-mini)
-- `NEXT_PUBLIC_APP_URL` - Your production domain
-
-## 🎥 Tutorial Video
-
-Watch my comprehensive tutorial on how to use this agentic coding boilerplate to build AI-powered applications:
-
-<a href="https://youtu.be/T0zFZsr_d0Q" target="_blank" rel="noopener noreferrer">📺 YouTube Tutorial - Building with Agentic Coding Boilerplate</a>
-
-## 🤝 Contributing
-
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Need Help?
-
-If you encounter any issues:
-
-1. Check the [Issues](https://github.com/leonvanzyl/agentic-coding-starter-kit/issues) section
-2. Review the documentation above
-3. Create a new issue with detailed information about your problem
+Para suporte, entre em contato:
+- Email: suporte@agenciavibecode.com
+- Website: [agenciavibecode.com](https://agenciavibecode.com)
 
 ---
 
-**Happy coding! 🚀**
+**Desenvolvido com ❤️ pela [Agência Vibe Code](https://agenciavibecode.com)**
