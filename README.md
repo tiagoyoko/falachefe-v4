@@ -20,6 +20,7 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 ## 🛠️ Stack Tecnológico
 
 ### Frontend
+
 - **Next.js 15** com App Router
 - **React 19** com hooks modernos
 - **TypeScript** para tipagem estática
@@ -27,12 +28,14 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 - **shadcn/ui** para componentes
 
 ### Backend
+
 - **Next.js API Routes** para endpoints
 - **Better Auth** para autenticação
 - **Drizzle ORM** para banco de dados
 - **PostgreSQL** como banco principal
 
 ### Integrações
+
 - **Google OAuth** para autenticação
 - **Vercel AI SDK** para processamento de IA
 - **OpenAI** para comandos de linguagem natural
@@ -40,6 +43,7 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 ## 🎯 Funcionalidades Implementadas
 
 ### ✅ Sistema de Onboarding Completo
+
 - **4 etapas** de configuração
 - **Captura de dados** da empresa
 - **Configuração de categorias** de receitas/despesas
@@ -47,11 +51,13 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 - **Redirecionamento condicional** automático
 
 ### ✅ Autenticação e Usuários
+
 - Login com Google OAuth
 - Gerenciamento de sessões
 - Proteção de rotas
 
 ### ✅ Interface Moderna
+
 - Design responsivo mobile-first
 - Componentes shadcn/ui
 - Toast notifications
@@ -60,13 +66,15 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 ## 🚀 Como Executar
 
 ### Pré-requisitos
+
 ```bash
-Node.js 18+ 
+Node.js 18+
 npm ou pnpm
 PostgreSQL
 ```
 
 ### Instalação
+
 ```bash
 # Clone o repositório
 git clone https://github.com/[seu-usuario]/falachefe-v4.git
@@ -87,6 +95,7 @@ pnpm dev
 ```
 
 ### Variáveis de Ambiente
+
 ```env
 # Database
 DATABASE_URL="sua-url-do-postgres"
@@ -123,18 +132,23 @@ src/
 ## 🎨 Componentes de Onboarding
 
 ### OnboardingFlow
+
 Orquestrador principal que gerencia todo o fluxo de configuração.
 
 ### OnboardingWelcome
+
 Tela de boas-vindas com seleção de áreas de interesse.
 
 ### CompanyInfoForm
+
 Formulário completo para informações da empresa.
 
 ### CategoriesSetup
+
 Configuração inteligente de categorias baseada no segmento.
 
 ### OnboardingCompletion
+
 Tela de conclusão com animação de progresso.
 
 ## 🔧 Scripts Disponíveis
@@ -157,6 +171,7 @@ pnpm db:studio    # Drizzle Studio
 ## 📊 Banco de Dados
 
 ### Principais Tabelas
+
 - **users**: Usuários do sistema
 - **companies**: Informações das empresas
 - **onboardingPreferences**: Preferências do onboarding
@@ -167,18 +182,21 @@ pnpm db:studio    # Drizzle Studio
 ## 🎯 Próximos Passos
 
 ### Curto Prazo
+
 - [ ] Integração com WhatsApp
 - [ ] Sistema de lembretes
 - [ ] Dashboard financeiro
 - [ ] Relatórios básicos
 
 ### Médio Prazo
+
 - [ ] Agentes especializados (Marketing, Vendas)
 - [ ] IA proativa para insights
 - [ ] Integrações bancárias
 - [ ] Backup e sincronização
 
 ### Longo Prazo
+
 - [ ] Marketplace de serviços
 - [ ] Analytics avançados
 - [ ] API pública
@@ -199,6 +217,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ## 🆘 Suporte
 
 Para suporte, entre em contato:
+
 - Email: suporte@agenciavibecode.com
 - Website: [agenciavibecode.com](https://agenciavibecode.com)
 

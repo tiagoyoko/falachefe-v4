@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "description": "Plataforma de automação de negócios via WhatsApp com agentes de IA especializados",
   "private": true,
-  "keywords": ["nextjs", "typescript", "ai", "whatsapp", "business-automation", "fintech"],
+  "keywords": [
+    "nextjs",
+    "typescript",
+    "ai",
+    "whatsapp",
+    "business-automation",
+    "fintech"
+  ],
   "author": "Agência Vibe Code <contato@agenciavibecode.com>",
   "license": "MIT",
   "scripts": {
