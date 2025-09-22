@@ -3,11 +3,11 @@ import { db } from "@/lib/db";
 import { userSettings, whatsappMessages } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { llmService } from "@/lib/llm-service";
-import { uazapiService } from "@/lib/uazapi-service";
+import { getUazapiService } from "@/lib/uazapi-service";
 import { nanoid } from "nanoid";
 
 // Handler genérico para eventos da Uazapi (messages, messages_update, connection, etc.)
-export async function POST(request: NextRequest, { params }: { params: any }) {
+export async function POST(request: NextRequest) {
   try {
     const url = new URL(request.url);
     const eventFromPath = url.pathname
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
           instanceId: instance,
           chatId,
           sender: rawFrom,
-          receiver: undefined as any,
+          receiver: null,
           messageType,
           messageText: typeof text === "string" ? text : null,
           mediaType: (data?.mediaType || data?.mimetype) ?? null,
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
             const response = await llmService.processUserMessage(userId, text);
             if (response?.message) {
               // Enviar resposta e persistir (outbound)
-              const sendRes = await uazapiService.sendText({
+              const sendRes = await getUazapiService().sendText({
                 number: numberOnly,
                 text: response.message,
                 readchat: true,
@@ -94,10 +94,20 @@ export async function POST(request: NextRequest, { params }: { params: any }) {
                   messageType: "text",
                   messageText: response.message,
                   providerMessageId:
-                    (sendRes.data as any)?.messageid || undefined,
-                  raw: (sendRes.data as any) ?? {},
-                  mediaType: null as any,
-                  mediaUrl: null as any,
+                    typeof sendRes.data === "object" &&
+                    sendRes.data !== null &&
+                    "messageid" in sendRes.data
+                      ? String(
+                          (sendRes.data as Record<string, unknown>
+                          ).messageid as string
+                        )
+                      : undefined,
+                  raw:
+                    typeof sendRes.data === "object" && sendRes.data !== null
+                      ? (sendRes.data as Record<string, unknown>)
+                      : {},
+                  mediaType: null,
+                  mediaUrl: null,
                 });
               } catch (e) {
                 console.warn("Falha ao persistir mensagem outbound:", e);

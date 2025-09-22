@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uazapiService } from "@/lib/uazapi-service";
-import { NextResponse } from "next/server";
+import { getUazapiService } from "@/lib/uazapi-service";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { number, text, type, file, ...rest } = body || {};
 
+    const uazapiService = getUazapiService();
     let result;
     if (type && file) {
       // Envio de mídia

@@ -73,9 +73,13 @@ export class UazapiService {
       const json = await safeJson(res);
 
       if (!res.ok) {
+        const errorMessage =
+          json && typeof json.error === "string"
+            ? json.error
+            : `Falha ao enviar mensagem (status ${status})`;
         return {
           success: false,
-          error: json?.error || `Falha ao enviar mensagem (status ${status})`,
+          error: errorMessage,
           status,
         };
       }
@@ -104,9 +108,13 @@ export class UazapiService {
       const json = await safeJson(res);
 
       if (!res.ok) {
+        const errorMessage =
+          json && typeof json.error === "string"
+            ? json.error
+            : `Falha ao enviar mídia (status ${status})`;
         return {
           success: false,
-          error: json?.error || `Falha ao enviar mídia (status ${status})`,
+          error: errorMessage,
           status,
         };
       }
@@ -121,12 +129,26 @@ export class UazapiService {
   }
 }
 
-async function safeJson(res: Response): Promise<any | null> {
+async function safeJson(res: Response): Promise<Record<string, unknown> | null> {
   try {
-    return await res.json();
+    const json = await res.json();
+    if (json && typeof json === "object") {
+      return json as Record<string, unknown>;
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
-export const uazapiService = new UazapiService();
+let singletonInstance: UazapiService | null = null;
+
+export function getUazapiService(): UazapiService {
+  if (singletonInstance) return singletonInstance;
+  const base = process.env.UAZAPI_BASE_URL;
+  const token = process.env.UAZAPI_TOKEN;
+  if (!base) throw new Error("UAZAPI_BASE_URL não configurado no ambiente");
+  if (!token) throw new Error("UAZAPI_TOKEN não configurado no ambiente");
+  singletonInstance = new UazapiService(base, token);
+  return singletonInstance;
+}
