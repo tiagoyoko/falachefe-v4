@@ -73,6 +73,15 @@ export async function POST(request: NextRequest) {
           const userId = settings[0]?.userId || null;
 
           if (userId) {
+            // Indicar "digitando" para UX melhor
+            try {
+              await getUazapiService().sendPresence({
+                number: numberOnly,
+                presence: "composing",
+                delay: 1500,
+              });
+            } catch {}
+
             const response = await llmService.processUserMessage(userId, text);
             if (response?.message) {
               // Enviar resposta e persistir (outbound)
@@ -111,6 +120,15 @@ export async function POST(request: NextRequest) {
                 });
               } catch (e) {
                 console.warn("Falha ao persistir mensagem outbound:", e);
+              }
+
+              // Marcar mensagens como lidas, se tivermos o id do provedor
+              if (providerMessageId) {
+                try {
+                  await getUazapiService().markMessagesRead({
+                    messages: [providerMessageId],
+                  });
+                } catch {}
               }
             }
           }

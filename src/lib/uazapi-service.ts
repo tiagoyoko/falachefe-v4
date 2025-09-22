@@ -127,6 +127,72 @@ export class UazapiService {
       };
     }
   }
+
+  async sendPresence(payload: {
+    number: string;
+    presence: "composing" | "recording" | "paused";
+    delay?: number;
+  }): Promise<UazapiResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/message/presence`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          token: this.token,
+        } as Record<string, string>,
+        body: JSON.stringify(payload),
+      });
+
+      const status = res.status;
+      const json = await safeJson(res);
+
+      if (!res.ok) {
+        const errorMessage =
+          json && typeof json.error === "string"
+            ? json.error
+            : `Falha ao enviar presença (status ${status})`;
+        return { success: false, error: errorMessage, status };
+      }
+
+      return { success: true, data: json, status };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+      };
+    }
+  }
+
+  async markMessagesRead(payload: { messages: string[] }): Promise<UazapiResponse> {
+    try {
+      const res = await fetch(`${this.baseUrl}/message/markread`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          token: this.token,
+        } as Record<string, string>,
+        body: JSON.stringify(payload),
+      });
+
+      const status = res.status;
+      const json = await safeJson(res);
+
+      if (!res.ok) {
+        const errorMessage =
+          json && typeof json.error === "string"
+            ? json.error
+            : `Falha ao marcar como lidas (status ${status})`;
+        return { success: false, error: errorMessage, status };
+      }
+
+      return { success: true, data: json, status };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+      };
+    }
+  }
 }
 
 async function safeJson(
