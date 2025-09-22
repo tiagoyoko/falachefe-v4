@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
                     sendRes.data !== null &&
                     "messageid" in sendRes.data
                       ? String(
-                          (sendRes.data as Record<string, unknown>
-                          ).messageid as string
+                          (sendRes.data as Record<string, unknown>)
+                            .messageid as string
                         )
                       : undefined,
                   raw:

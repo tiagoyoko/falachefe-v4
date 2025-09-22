@@ -1,7 +1,16 @@
 import { createAuthClient } from "better-auth/react"
 
+function resolveBaseURL(): string {
+  // Em runtime no browser, usa o domínio atual se não houver NEXT_PUBLIC_APP_URL
+  if (typeof window !== "undefined") {
+    return process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+  }
+  // Em SSR/build, mantém a env ou fallback local (não afeta browser)
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+}
+
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: resolveBaseURL(),
 })
 
 export const {

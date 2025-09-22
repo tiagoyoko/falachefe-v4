@@ -129,7 +129,9 @@ export class UazapiService {
   }
 }
 
-async function safeJson(res: Response): Promise<Record<string, unknown> | null> {
+async function safeJson(
+  res: Response
+): Promise<Record<string, unknown> | null> {
   try {
     const json = await res.json();
     if (json && typeof json === "object") {
