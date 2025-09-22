@@ -206,3 +206,22 @@ export const onboardingTemplates = pgTable("onboardingTemplates", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
+
+// ===== HISTÓRICO DE MENSAGENS WHATSAPP =====
+
+export const whatsappMessages = pgTable("whatsappMessages", {
+  id: text("id").primaryKey(),
+  direction: text("direction").notNull(), // 'in' | 'out'
+  userId: text("userId").references(() => user.id, { onDelete: "set null" }),
+  instanceId: text("instanceId"),
+  chatId: text("chatId"),
+  sender: text("sender"),
+  receiver: text("receiver"),
+  messageType: text("messageType"), // text, image, audio, etc.
+  messageText: text("messageText"),
+  mediaType: text("mediaType"), // image, video, document, audio, ptt, sticker
+  mediaUrl: text("mediaUrl"),
+  providerMessageId: text("providerMessageId"),
+  raw: json("raw"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
