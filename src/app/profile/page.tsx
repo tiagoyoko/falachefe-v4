@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import { Mail, Calendar, User, Shield, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useUserProfile();
   const router = useRouter();
 
   if (loading) {
@@ -27,12 +27,12 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
+  if (!user || !profile) {
     router.push("/");
     return null;
   }
-  const createdDate = user.created_at
-    ? new Date(user.created_at).toLocaleDateString("en-US", {
+  const createdDate = profile.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -66,10 +66,10 @@ export default function ProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">User</h2>
+                <h2 className="text-2xl font-semibold">{profile.name || "User"}</h2>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  <span>{user.email}</span>
+                  <span>{profile.email}</span>
                   {false && ( // TODO: Implementar verificação de email
                     <Badge
                       variant="outline"
@@ -104,7 +104,7 @@ export default function ProfilePage() {
                   Full Name
                 </label>
                 <div className="p-3 border rounded-md bg-muted/10">
-                  {"Not provided"}
+                  {profile.name || "Not provided"}
                 </div>
               </div>
               <div className="space-y-2">
@@ -112,7 +112,7 @@ export default function ProfilePage() {
                   Email Address
                 </label>
                 <div className="p-3 border rounded-md bg-muted/10 flex items-center justify-between">
-                  <span>{user.email}</span>
+                  <span>{profile.email}</span>
                   {false && ( // TODO: Implementar verificação de email
                     <Badge
                       variant="outline"
@@ -146,7 +146,14 @@ export default function ProfilePage() {
                       Your account access level
                     </p>
                   </div>
-                  <Badge variant="outline">Standard</Badge>
+                  <Badge 
+                    variant={profile.role === 'admin' || profile.role === 'super_admin' ? 'default' : 'outline'}
+                    className={profile.role === 'admin' || profile.role === 'super_admin' ? 'bg-blue-600 text-white' : ''}
+                  >
+                    {profile.role === 'admin' ? 'Administrator' : 
+                     profile.role === 'super_admin' ? 'Super Administrator' : 
+                     'Standard User'}
+                  </Badge>
                 </div>
               </div>
             </div>
