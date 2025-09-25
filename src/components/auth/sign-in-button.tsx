@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export function SignInButton() {
-  const { user, loading } = useAuth();
+  const { user, loading, signInWithGoogle } = useAuth();
 
   if (loading) {
     return <Button disabled>Loading...</Button>;
@@ -15,6 +15,13 @@ export function SignInButton() {
     return null;
   }
 
+  const handleGoogleSignIn = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      console.error("Erro ao fazer login com Google:", error);
+    }
+  };
+
   return (
     <div className="flex gap-2">
       <Button asChild>
@@ -22,10 +29,7 @@ export function SignInButton() {
       </Button>
       <Button
         variant="outline"
-        onClick={async () => {
-          // TODO: Implementar signIn
-          console.log("Google sign-in clicked");
-        }}
+        onClick={handleGoogleSignIn}
       >
         Google
       </Button>
