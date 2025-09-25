@@ -92,15 +92,25 @@ export function useLLMAgent({
       setError(null);
 
       try {
-        const response = await fetch("/api/agent/business", {
+        // Mapear tipos de comando para nomes de agentes
+        const agentMapping = {
+          finance: "leo",
+          marketing: "max", 
+          sales: "max", // Vendas também vai para Max
+          general: "max" // Geral vai para Max como padrão
+        };
+
+        const agentName = agentMapping[commandType];
+
+        const response = await fetch("/api/agent/specific", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             userId,
-            command,
-            commandType,
+            message: command,
+            agentName,
           }),
         });
 

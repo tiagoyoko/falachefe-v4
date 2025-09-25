@@ -45,12 +45,23 @@ export function LLMChatInterface({
     useLLMAgent({
       userId,
       onSuccess: (response) => {
+        // Determinar qual agente respondeu baseado no tipo selecionado
+        const agentMapping = {
+          general: "Max",
+          finance: "Leo", 
+          marketing: "Max",
+          sales: "Max"
+        };
+        
+        const agentName = agentMapping[selectedCommandType];
+        
         const newMessage: Message = {
           id: Date.now().toString(),
           content: response.message,
           role: "assistant",
           timestamp: new Date(),
           suggestedActions: response.suggestedActions,
+          agentName: agentName, // Adicionar nome do agente
         };
         setMessages((prev) => [...prev, newMessage]);
       },

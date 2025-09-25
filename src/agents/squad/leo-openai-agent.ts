@@ -43,7 +43,8 @@ export function createLeoOpenAIAgent(params: { userId?: string }): OpenAIAgent {
 
   const options: OpenAIAgentOptions & { apiKey: string } = {
     name: "leo",
-    description: "Mentor financeiro experiente e confiável. Ajuda a entender números, evitar erros financeiros e planejar o caixa.",
+    description:
+      "Mentor financeiro experiente e confiável. Ajuda a entender números, evitar erros financeiros e planejar o caixa.",
     saveChat: true,
     apiKey: process.env.OPENAI_API_KEY || "",
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",

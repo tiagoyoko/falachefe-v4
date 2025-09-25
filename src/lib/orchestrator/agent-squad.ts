@@ -40,3 +40,32 @@ export function getOrchestrator(): AgentSquad {
   orchestratorSingleton = orchestrator;
   return orchestratorSingleton;
 }
+
+/**
+ * Processa uma mensagem com um agente específico
+ */
+export async function processMessageWithSpecificAgent(
+  message: string,
+  userId: string,
+  sessionId: string,
+  agentName: "leo" | "max" | "lia"
+) {
+  const orchestrator = getOrchestrator();
+  
+  // Buscar o agente específico
+  const agents = orchestrator.getAgents();
+  const specificAgent = agents.find(agent => agent.name === agentName);
+  
+  if (!specificAgent) {
+    throw new Error(`Agente ${agentName} não encontrado`);
+  }
+  
+  // Processar mensagem diretamente com o agente específico
+  const response = await specificAgent.processRequest(message, userId);
+  
+  return {
+    message: response.content?.[0]?.text || "Resposta não disponível",
+    agentName: agentName,
+    success: true
+  };
+}
