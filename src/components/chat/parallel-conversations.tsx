@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useConversations, ConversationSession, ConversationMessage } from "@/hooks/use-conversations";
-import { Bot, User, Plus, MessageSquare, Users } from "lucide-react";
+import {
+  useConversations,
+  ConversationSession,
+  ConversationMessage,
+} from "@/hooks/use-conversations";
+import { Bot, Plus, MessageSquare, Users, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -17,10 +20,14 @@ interface ParallelConversationsProps {
 
 export function ParallelConversations({ userId }: ParallelConversationsProps) {
   const [conversations, setConversations] = useState<ConversationSession[]>([]);
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Record<string, ConversationMessage[]>>({});
+  const [activeConversation, setActiveConversation] = useState<string | null>(
+    null
+  );
+  const [messages, setMessages] = useState<
+    Record<string, ConversationMessage[]>
+  >({});
   const [inputValue, setInputValue] = useState("");
-  const [newConversationAgent, setNewConversationAgent] = useState<"leo" | "max" | "lia">("leo");
+  const [newConversationAgent] = useState<"leo" | "max" | "lia">("leo");
 
   const {
     createIndividualConversation,
@@ -36,12 +43,7 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
     onError: (error) => console.error("Erro:", error),
   });
 
-  // Carregar conversas do usuário
-  useEffect(() => {
-    loadConversations();
-  }, [userId]);
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     const userConversations = await getUserConversations();
     if (userConversations) {
       setConversations(userConversations);
@@ -50,12 +52,17 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
         loadMessages(userConversations[0].id);
       }
     }
-  };
+  }, [getUserConversations, activeConversation, loadMessages]);
+
+  // Carregar conversas do usuário
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
 
   const loadMessages = async (sessionId: string) => {
     const history = await getConversationHistory(sessionId);
     if (history) {
-      setMessages(prev => ({
+      setMessages((prev) => ({
         ...prev,
         [sessionId]: history,
       }));
@@ -63,11 +70,12 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
   };
 
   const createNewIndividualConversation = async () => {
-    const conversation = await createIndividualConversation(newConversationAgent);
+    const conversation =
+      await createIndividualConversation(newConversationAgent);
     if (conversation) {
-      setConversations(prev => [conversation, ...prev]);
+      setConversations((prev) => [conversation, ...prev]);
       setActiveConversation(conversation.id);
-      setMessages(prev => ({
+      setMessages((prev) => ({
         ...prev,
         [conversation.id]: [],
       }));
@@ -75,11 +83,14 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
   };
 
   const createNewGroupConversation = async () => {
-    const conversation = await createGroupConversation(["leo", "max", "lia"], "Conversa em Grupo");
+    const conversation = await createGroupConversation(
+      ["leo", "max", "lia"],
+      "Conversa em Grupo"
+    );
     if (conversation) {
-      setConversations(prev => [conversation, ...prev]);
+      setConversations((prev) => [conversation, ...prev]);
       setActiveConversation(conversation.id);
-      setMessages(prev => ({
+      setMessages((prev) => ({
         ...prev,
         [conversation.id]: [],
       }));
@@ -89,7 +100,9 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
   const sendMessage = async () => {
     if (!inputValue.trim() || !activeConversation) return;
 
-    const currentConversation = conversations.find(c => c.id === activeConversation);
+    const currentConversation = conversations.find(
+      (c) => c.id === activeConversation
+    );
     if (!currentConversation) return;
 
     const userMessage: ConversationMessage = {
@@ -101,7 +114,7 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
     };
 
     // Adicionar mensagem do usuário
-    setMessages(prev => ({
+    setMessages((prev) => ({
       ...prev,
       [activeConversation]: [...(prev[activeConversation] || []), userMessage],
     }));
@@ -117,9 +130,12 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
           currentConversation.agents[0] as "leo" | "max" | "lia"
         );
         if (response) {
-          setMessages(prev => ({
+          setMessages((prev) => ({
             ...prev,
-            [activeConversation]: [...(prev[activeConversation] || []), response],
+            [activeConversation]: [
+              ...(prev[activeConversation] || []),
+              response,
+            ],
           }));
         }
       } else {
@@ -129,9 +145,12 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
           currentConversation.agents as ("leo" | "max" | "lia")[]
         );
         if (responses) {
-          setMessages(prev => ({
+          setMessages((prev) => ({
             ...prev,
-            [activeConversation]: [...(prev[activeConversation] || []), ...responses],
+            [activeConversation]: [
+              ...(prev[activeConversation] || []),
+              ...responses,
+            ],
           }));
         }
       }
@@ -142,26 +161,36 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
 
   const getAgentIcon = (agentId: string) => {
     switch (agentId) {
-      case "leo": return "💰";
-      case "max": return "📈";
-      case "lia": return "👥";
-      default: return "🤖";
+      case "leo":
+        return "💰";
+      case "max":
+        return "📈";
+      case "lia":
+        return "👥";
+      default:
+        return "🤖";
     }
   };
 
   const getAgentName = (agentId: string) => {
     switch (agentId) {
-      case "leo": return "Leo (Financeiro)";
-      case "max": return "Max (Marketing)";
-      case "lia": return "Lia (RH)";
-      default: return "Agente";
+      case "leo":
+        return "Leo (Financeiro)";
+      case "max":
+        return "Max (Marketing)";
+      case "lia":
+        return "Lia (RH)";
+      default:
+        return "Agente";
     }
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Conversas Paralelas com Agentes</h1>
+        <h1 className="text-2xl font-semibold">
+          Conversas Paralelas com Agentes
+        </h1>
         <div className="flex gap-2">
           <Button
             onClick={createNewIndividualConversation}
@@ -208,10 +237,16 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
                 }}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant={conversation.type === "group" ? "default" : "secondary"}>
+                  <Badge
+                    variant={
+                      conversation.type === "group" ? "default" : "secondary"
+                    }
+                  >
                     {conversation.type === "group" ? "Grupo" : "Individual"}
                   </Badge>
-                  <span className="text-sm font-medium">{conversation.title}</span>
+                  <span className="text-sm font-medium">
+                    {conversation.title}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   {conversation.agents.map((agent) => (
@@ -231,10 +266,10 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5" />
-                {activeConversation ? 
-                  conversations.find(c => c.id === activeConversation)?.title || "Chat" 
-                  : "Selecione uma conversa"
-                }
+                {activeConversation
+                  ? conversations.find((c) => c.id === activeConversation)
+                      ?.title || "Chat"
+                  : "Selecione uma conversa"}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
@@ -246,7 +281,9 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
                       <div
                         key={message.id}
                         className={`flex gap-3 ${
-                          message.role === "user" ? "justify-end" : "justify-start"
+                          message.role === "user"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
                         <div
@@ -258,7 +295,8 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
                         >
                           {message.role === "assistant" && message.agentId && (
                             <div className="flex items-center gap-2 mb-2 text-xs font-medium">
-                              {getAgentIcon(message.agentId)} {getAgentName(message.agentId)}
+                              {getAgentIcon(message.agentId)}{" "}
+                              {getAgentName(message.agentId)}
                             </div>
                           )}
                           <ReactMarkdown
@@ -281,7 +319,10 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
                       onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                       disabled={isLoading}
                     />
-                    <Button onClick={sendMessage} disabled={isLoading || !inputValue.trim()}>
+                    <Button
+                      onClick={sendMessage}
+                      disabled={isLoading || !inputValue.trim()}
+                    >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>

@@ -87,7 +87,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Obter conversas do usuário
-    const conversations = await conversationManager.getUserConversations(userId);
+    const conversations =
+      await conversationManager.getUserConversations(userId);
 
     return NextResponse.json({
       success: true,

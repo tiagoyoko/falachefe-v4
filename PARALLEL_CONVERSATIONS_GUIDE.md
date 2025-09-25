@@ -7,18 +7,21 @@ O sistema implementa **conversas paralelas** e **conversas em grupo** usando o f
 ## 🎯 Funcionalidades Implementadas
 
 ### 1. **Conversas Paralelas (Individuais)**
+
 - **Cada agente mantém sua própria conversa** com o usuário
 - **Contexto independente** para cada agente
 - **Histórico separado** por agente
 - **Sessões persistentes** no banco de dados
 
 ### 2. **Conversas em Grupo**
+
 - **Múltiplos agentes respondem** à mesma mensagem
 - **Respostas coordenadas** de diferentes especialistas
 - **Contexto compartilhado** entre agentes do grupo
 - **Colaboração inteligente** entre agentes
 
 ### 3. **Roteamento Específico por Agente**
+
 - **Abas do chat** roteiam para agentes específicos
 - **Geral** → Max (padrão)
 - **Financeiro** → Leo
@@ -30,31 +33,34 @@ O sistema implementa **conversas paralelas** e **conversas em grupo** usando o f
 ### **Componentes Principais**
 
 #### 1. **ConversationManager** (`src/lib/conversation-manager.ts`)
+
 ```typescript
 class ConversationManager {
   // Criar conversa individual
-  createIndividualConversation(userId, agentId)
-  
+  createIndividualConversation(userId, agentId);
+
   // Criar conversa em grupo
-  createGroupConversation(userId, agentIds, title)
-  
+  createGroupConversation(userId, agentIds, title);
+
   // Enviar mensagem individual
-  sendIndividualMessage(sessionId, userId, message, agentId)
-  
+  sendIndividualMessage(sessionId, userId, message, agentId);
+
   // Enviar mensagem em grupo
-  sendGroupMessage(sessionId, userId, message, agentIds)
-  
+  sendGroupMessage(sessionId, userId, message, agentIds);
+
   // Obter histórico
-  getConversationHistory(sessionId)
+  getConversationHistory(sessionId);
 }
 ```
 
 #### 2. **APIs de Conversa**
+
 - **`/api/conversations/individual`** - Gerenciar conversas individuais
 - **`/api/conversations/group`** - Gerenciar conversas em grupo
 - **`/api/conversations/[sessionId]/message`** - Enviar mensagens
 
 #### 3. **Hook useConversations** (`src/hooks/use-conversations.ts`)
+
 ```typescript
 const {
   createIndividualConversation,
@@ -67,6 +73,7 @@ const {
 ```
 
 #### 4. **Interface ParallelConversations** (`src/components/chat/parallel-conversations.tsx`)
+
 - **Lista de conversas ativas**
 - **Área de chat dinâmica**
 - **Suporte a conversas individuais e em grupo**
@@ -101,12 +108,14 @@ graph TD
 ## 🎭 Mapeamento de Agentes
 
 ### **Por Aba do Chat**
+
 - **Geral** → Max (Marketing/Vendas)
 - **Financeiro** → Leo (Financeiro)
 - **Marketing** → Max (Marketing/Vendas)
 - **Vendas** → Max (Marketing/Vendas)
 
 ### **Por Especialidade**
+
 - **Leo** 💰 - Mentor financeiro experiente
 - **Max** 📈 - Jovem entusiasmado de marketing
 - **Lia** 👥 - Mediadora acolhedora de RH
@@ -114,6 +123,7 @@ graph TD
 ## 📊 Estrutura de Dados
 
 ### **ConversationSession**
+
 ```typescript
 interface ConversationSession {
   id: string;
@@ -127,6 +137,7 @@ interface ConversationSession {
 ```
 
 ### **ConversationMessage**
+
 ```typescript
 interface ConversationMessage {
   id: string;
@@ -181,6 +192,7 @@ const responses = await sendGroupMessage(
 ## 🔧 Configuração do Agent-Squad
 
 ### **Orquestrador Atualizado**
+
 ```typescript
 // Suporte a seleção direta de agente
 export async function processMessageWithSpecificAgent(
@@ -190,36 +202,42 @@ export async function processMessageWithSpecificAgent(
   agentName: "leo" | "max" | "lia"
 ) {
   const orchestrator = getOrchestrator();
-  const specificAgent = orchestrator.getAgents().find(agent => agent.name === agentName);
+  const specificAgent = orchestrator
+    .getAgents()
+    .find((agent) => agent.name === agentName);
   return await specificAgent.processRequest(message, userId);
 }
 ```
 
 ### **Storage Personalizado**
+
 ```typescript
 // DrizzleChatStorage gerencia sessões e mensagens
 class DrizzleChatStorage extends ChatStorage {
-  async saveChatMessage(userId, sessionId, agentId, message, maxHistorySize)
-  async fetchChat(userId, sessionId, agentId, maxHistorySize)
-  async fetchAllChats(userId, sessionId)
+  async saveChatMessage(userId, sessionId, agentId, message, maxHistorySize);
+  async fetchChat(userId, sessionId, agentId, maxHistorySize);
+  async fetchAllChats(userId, sessionId);
 }
 ```
 
 ## 📈 Benefícios
 
 ### **1. Experiência do Usuário**
+
 - ✅ **Conversas organizadas** por especialidade
 - ✅ **Contexto preservado** em cada conversa
 - ✅ **Respostas especializadas** por agente
 - ✅ **Interface intuitiva** para gerenciar conversas
 
 ### **2. Flexibilidade**
+
 - ✅ **Conversas paralelas** independentes
 - ✅ **Conversas em grupo** colaborativas
 - ✅ **Roteamento automático** por aba
 - ✅ **Seleção manual** de agentes
 
 ### **3. Escalabilidade**
+
 - ✅ **Suporte a múltiplos usuários**
 - ✅ **Sessões persistentes**
 - ✅ **Histórico completo**
@@ -228,16 +246,19 @@ class DrizzleChatStorage extends ChatStorage {
 ## 🎯 Casos de Uso
 
 ### **1. Consultoria Especializada**
+
 - **Leo** para questões financeiras
 - **Max** para estratégias de marketing
 - **Lia** para gestão de pessoas
 
 ### **2. Planejamento Colaborativo**
+
 - **Conversa em grupo** com todos os agentes
 - **Perspectivas múltiplas** sobre o mesmo tópico
 - **Respostas coordenadas** e complementares
 
 ### **3. Atendimento Segmentado**
+
 - **Abas específicas** para cada área
 - **Roteamento automático** baseado na seleção
 - **Contexto especializado** por conversa
@@ -245,6 +266,7 @@ class DrizzleChatStorage extends ChatStorage {
 ## 🔮 Próximos Passos
 
 ### **Melhorias Futuras**
+
 1. **Notificações** quando agentes respondem
 2. **Transferência de conversa** entre agentes
 3. **Resumos automáticos** de conversas longas
@@ -252,6 +274,7 @@ class DrizzleChatStorage extends ChatStorage {
 5. **Métricas de performance** por agente
 
 ### **Otimizações**
+
 1. **Cache inteligente** para conversas frequentes
 2. **Compressão de histórico** para conversas antigas
 3. **Sincronização em tempo real** para conversas em grupo

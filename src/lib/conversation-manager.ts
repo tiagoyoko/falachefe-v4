@@ -1,7 +1,7 @@
 import { getOrchestrator } from "./orchestrator/agent-squad";
 import { db } from "./db";
 import { conversationSessions, conversationMessages } from "./schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface ConversationSession {
@@ -32,7 +32,7 @@ export class ConversationManager {
     agentId: "leo" | "max" | "lia"
   ): Promise<ConversationSession> {
     const sessionId = nanoid();
-    
+
     await db.insert(conversationSessions).values({
       id: sessionId,
       userId,
@@ -60,7 +60,7 @@ export class ConversationManager {
     title?: string
   ): Promise<ConversationSession> {
     const sessionId = nanoid();
-    
+
     // Para conversas em grupo, usamos o primeiro agente como principal
     // mas mantemos referência a todos os agentes
     await db.insert(conversationSessions).values({
@@ -91,7 +91,7 @@ export class ConversationManager {
     agentId: "leo" | "max" | "lia"
   ): Promise<ConversationMessage> {
     const orchestrator = getOrchestrator();
-    
+
     // Salvar mensagem do usuário
     const userMessage: ConversationMessage = {
       id: nanoid(),
@@ -104,8 +104,12 @@ export class ConversationManager {
     await this.saveMessage(userMessage);
 
     // Processar com agente específico
-    const response = await orchestrator.routeRequest(message, userId, sessionId);
-    
+    const response = await orchestrator.routeRequest(
+      message,
+      userId,
+      sessionId
+    );
+
     // Salvar resposta do agente
     const agentMessage: ConversationMessage = {
       id: nanoid(),
@@ -131,7 +135,7 @@ export class ConversationManager {
     agentIds: ("leo" | "max" | "lia")[]
   ): Promise<ConversationMessage[]> {
     const orchestrator = getOrchestrator();
-    
+
     // Salvar mensagem do usuário
     const userMessage: ConversationMessage = {
       id: nanoid(),
@@ -145,11 +149,15 @@ export class ConversationManager {
 
     // Processar com cada agente do grupo
     const responses: ConversationMessage[] = [];
-    
+
     for (const agentId of agentIds) {
       try {
-        const response = await orchestrator.routeRequest(message, userId, sessionId);
-        
+        const response = await orchestrator.routeRequest(
+          message,
+          userId,
+          sessionId
+        );
+
         const agentMessage: ConversationMessage = {
           id: nanoid(),
           sessionId,
@@ -162,8 +170,11 @@ export class ConversationManager {
         await this.saveMessage(agentMessage);
         responses.push(agentMessage);
       } catch (error) {
-        console.error(`Erro ao processar mensagem com agente ${agentId}:`, error);
-        
+        console.error(
+          `Erro ao processar mensagem com agente ${agentId}:`,
+          error
+        );
+
         // Adicionar mensagem de erro
         const errorMessage: ConversationMessage = {
           id: nanoid(),
@@ -185,7 +196,9 @@ export class ConversationManager {
   /**
    * Obter histórico de uma conversa
    */
-  async getConversationHistory(sessionId: string): Promise<ConversationMessage[]> {
+  async getConversationHistory(
+    sessionId: string
+  ): Promise<ConversationMessage[]> {
     const messages = await db
       .select({
         id: conversationMessages.id,
@@ -203,7 +216,7 @@ export class ConversationManager {
       .where(eq(conversationMessages.sessionId, sessionId))
       .orderBy(conversationMessages.createdAt);
 
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       id: msg.id,
       sessionId: msg.sessionId,
       agentId: msg.agentId as "leo" | "max" | "lia" | undefined,
@@ -230,7 +243,7 @@ export class ConversationManager {
       .where(eq(conversationSessions.userId, userId))
       .orderBy(desc(conversationSessions.updatedAt));
 
-    return sessions.map(session => ({
+    return sessions.map((session) => ({
       id: session.id,
       userId: session.userId,
       type: "individual" as const, // Por enquanto, todas são individuais

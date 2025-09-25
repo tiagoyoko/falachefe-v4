@@ -5,7 +5,7 @@ import { MaxKnowledgeRetriever } from "@/lib/knowledge-base/knowledge-retriever"
 
 class MarketingRagRetriever extends Retriever {
   async retrieve(
-    text: string
+    _text: string
   ): Promise<Array<{ content: string; score: number }>> {
     // Fallback para busca RAG básica se necessário
     return [];

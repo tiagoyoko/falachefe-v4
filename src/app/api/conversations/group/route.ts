@@ -19,11 +19,13 @@ export async function POST(request: NextRequest) {
 
     // Validar agentIds
     const validAgents = ["leo", "max", "lia"];
-    const invalidAgents = agentIds.filter(id => !validAgents.includes(id));
-    
+    const invalidAgents = agentIds.filter((id) => !validAgents.includes(id));
+
     if (invalidAgents.length > 0) {
       return NextResponse.json(
-        { error: `Agent IDs inválidos: ${invalidAgents.join(", ")}. Use: leo, max ou lia` },
+        {
+          error: `Agent IDs inválidos: ${invalidAgents.join(", ")}. Use: leo, max ou lia`,
+        },
         { status: 400 }
       );
     }

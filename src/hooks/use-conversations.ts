@@ -30,7 +30,9 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
 
   // Criar conversa individual
   const createIndividualConversation = useCallback(
-    async (agentId: "leo" | "max" | "lia"): Promise<ConversationSession | null> => {
+    async (
+      agentId: "leo" | "max" | "lia"
+    ): Promise<ConversationSession | null> => {
       if (!userId) {
         const errorMsg = "User ID é obrigatório";
         setError(errorMsg);
@@ -55,13 +57,16 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Erro ao criar conversa individual");
+          throw new Error(
+            errorData.error || "Erro ao criar conversa individual"
+          );
         }
 
         const data = await response.json();
         return data.data;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+        const errorMsg =
+          err instanceof Error ? err.message : "Erro desconhecido";
         setError(errorMsg);
         onError?.(errorMsg);
         return null;
@@ -109,7 +114,8 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
         const data = await response.json();
         return data.data;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+        const errorMsg =
+          err instanceof Error ? err.message : "Erro desconhecido";
         setError(errorMsg);
         onError?.(errorMsg);
         return null;
@@ -138,17 +144,20 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/conversations/${sessionId}/message`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId,
-            message,
-            agentId,
-          }),
-        });
+        const response = await fetch(
+          `/api/conversations/${sessionId}/message`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId,
+              message,
+              agentId,
+            }),
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -158,7 +167,8 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
         const data = await response.json();
         return data.data;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+        const errorMsg =
+          err instanceof Error ? err.message : "Erro desconhecido";
         setError(errorMsg);
         onError?.(errorMsg);
         return null;
@@ -187,17 +197,20 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/conversations/${sessionId}/message`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId,
-            message,
-            agentIds,
-          }),
-        });
+        const response = await fetch(
+          `/api/conversations/${sessionId}/message`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId,
+              message,
+              agentIds,
+            }),
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -207,7 +220,8 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
         const data = await response.json();
         return data.data;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+        const errorMsg =
+          err instanceof Error ? err.message : "Erro desconhecido";
         setError(errorMsg);
         onError?.(errorMsg);
         return null;
@@ -250,7 +264,8 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
         const data = await response.json();
         return data.data;
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+        const errorMsg =
+          err instanceof Error ? err.message : "Erro desconhecido";
         setError(errorMsg);
         onError?.(errorMsg);
         return null;
@@ -262,47 +277,46 @@ export function useConversations({ userId, onError }: UseConversationsOptions) {
   );
 
   // Listar conversas do usuário
-  const getUserConversations = useCallback(
-    async (): Promise<ConversationSession[] | null> => {
-      if (!userId) {
-        const errorMsg = "User ID é obrigatório";
-        setError(errorMsg);
-        onError?.(errorMsg);
-        return null;
-      }
+  const getUserConversations = useCallback(async (): Promise<
+    ConversationSession[] | null
+  > => {
+    if (!userId) {
+      const errorMsg = "User ID é obrigatório";
+      setError(errorMsg);
+      onError?.(errorMsg);
+      return null;
+    }
 
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const response = await fetch(
-          `/api/conversations/individual?userId=${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erro ao listar conversas");
+    try {
+      const response = await fetch(
+        `/api/conversations/individual?userId=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
+      );
 
-        const data = await response.json();
-        return data.data;
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
-        setError(errorMsg);
-        onError?.(errorMsg);
-        return null;
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao listar conversas");
       }
-    },
-    [userId, onError]
-  );
+
+      const data = await response.json();
+      return data.data;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+      setError(errorMsg);
+      onError?.(errorMsg);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, onError]);
 
   const clearError = useCallback(() => {
     setError(null);

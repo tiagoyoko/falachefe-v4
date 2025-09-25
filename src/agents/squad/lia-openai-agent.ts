@@ -5,7 +5,7 @@ import { LiaKnowledgeRetriever } from "@/lib/knowledge-base/knowledge-retriever"
 
 class HrRagRetriever extends Retriever {
   async retrieve(
-    text: string
+    _text: string
   ): Promise<Array<{ content: string; score: number }>> {
     // Fallback para busca RAG básica se necessário
     return [];

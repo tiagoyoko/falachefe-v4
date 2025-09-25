@@ -14,10 +14,10 @@ async function testAgentSquad() {
     console.log("✅ Orquestrador inicializado com sucesso");
 
     // Listar agentes registrados
-    const agents = orchestrator.getAgents();
+    const agents = orchestrator.getAllAgents();
     console.log(`\n📋 Agentes registrados: ${agents.length}`);
 
-    agents.forEach((agent, index) => {
+    agents.forEach((agent: any, index: number) => {
       console.log(`  ${index + 1}. ${agent.name} - ${agent.description}`);
     });
 
