@@ -3,8 +3,8 @@ import { OpenAIClassifier } from "agent-squad";
 
 import { DrizzleChatStorage } from "./drizzle-storage";
 import { createLeoOpenAIAgent } from "@/agents/squad/leo-openai-agent";
-import { MaxSquadAgent } from "@/agents/squad/max-agent";
-import { LiaSquadAgent } from "@/agents/squad/lia-agent";
+import { createMaxOpenAIAgent } from "@/agents/squad/max-openai-agent";
+import { createLiaOpenAIAgent } from "@/agents/squad/lia-openai-agent";
 
 let orchestratorSingleton: AgentSquad | null = null;
 
@@ -27,10 +27,10 @@ export function getOrchestrator(): AgentSquad {
     },
   });
 
-  // Registrar agentes
+  // Registrar agentes com base de conhecimento personalizada
   const leo = createLeoOpenAIAgent({});
-  const max = new MaxSquadAgent();
-  const lia = new LiaSquadAgent();
+  const max = createMaxOpenAIAgent({});
+  const lia = createLiaOpenAIAgent({});
 
   orchestrator.addAgent(leo);
   orchestrator.addAgent(max);

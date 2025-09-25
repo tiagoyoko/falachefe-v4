@@ -66,7 +66,9 @@ export default function ProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">{profile.name || "User"}</h2>
+                <h2 className="text-2xl font-semibold">
+                  {profile.name || "User"}
+                </h2>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4" />
                   <span>{profile.email}</span>
@@ -146,13 +148,23 @@ export default function ProfilePage() {
                       Your account access level
                     </p>
                   </div>
-                  <Badge 
-                    variant={profile.role === 'admin' || profile.role === 'super_admin' ? 'default' : 'outline'}
-                    className={profile.role === 'admin' || profile.role === 'super_admin' ? 'bg-blue-600 text-white' : ''}
+                  <Badge
+                    variant={
+                      profile.role === "admin" || profile.role === "super_admin"
+                        ? "default"
+                        : "outline"
+                    }
+                    className={
+                      profile.role === "admin" || profile.role === "super_admin"
+                        ? "bg-blue-600 text-white"
+                        : ""
+                    }
                   >
-                    {profile.role === 'admin' ? 'Administrator' : 
-                     profile.role === 'super_admin' ? 'Super Administrator' : 
-                     'Standard User'}
+                    {profile.role === "admin"
+                      ? "Administrator"
+                      : profile.role === "super_admin"
+                        ? "Super Administrator"
+                        : "Standard User"}
                   </Badge>
                 </div>
               </div>
