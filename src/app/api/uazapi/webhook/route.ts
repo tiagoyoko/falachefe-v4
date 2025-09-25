@@ -5,7 +5,7 @@ import { whatsappConversationManager } from "@/lib/whatsapp-conversation-manager
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    
+
     // Estrutura base esperada (conforme docs): { event, instance, data }
     const event = body?.event || "unknown";
     const instanceId = body?.instance || body?.instance_id || "";

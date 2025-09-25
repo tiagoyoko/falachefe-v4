@@ -15,8 +15,8 @@ const mockWebhookPayload = {
     messageTimestamp: Date.now(),
     sender: "5511999999999@s.whatsapp.net",
     receiver: "5511888888888@s.whatsapp.net",
-    instance_id: "test-instance-123"
-  }
+    instance_id: "test-instance-123",
+  },
 };
 
 async function testWebhook() {
@@ -52,33 +52,33 @@ async function testDifferentMessageTypes() {
   const testMessages = [
     {
       text: "Preciso de ajuda com marketing digital",
-      expectedAgent: "Max (Marketing)"
+      expectedAgent: "Max (Marketing)",
     },
     {
       text: "Como calcular o fluxo de caixa da empresa?",
-      expectedAgent: "Leo (Financeiro)"
+      expectedAgent: "Leo (Financeiro)",
     },
     {
       text: "Quero contratar um novo funcionário",
-      expectedAgent: "Lia (RH)"
+      expectedAgent: "Lia (RH)",
     },
     {
       text: "Olá, como posso ajudar?",
-      expectedAgent: "Max (Padrão)"
-    }
+      expectedAgent: "Max (Padrão)",
+    },
   ];
 
   for (const test of testMessages) {
     console.log(`📝 Testando: "${test.text}"`);
     console.log(`🎯 Agente esperado: ${test.expectedAgent}`);
-    
+
     const payload = {
       ...mockWebhookPayload,
       data: {
         ...mockWebhookPayload.data,
         text: test.text,
-        messageid: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      }
+        messageid: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      },
     };
 
     try {
@@ -100,19 +100,19 @@ async function testDifferentMessageTypes() {
     }
 
     console.log("---");
-    
+
     // Aguardar um pouco entre as mensagens
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 }
 
 // Executar testes
 async function runTests() {
   console.log("🚀 Iniciando testes do webhook WhatsApp\n");
-  
+
   await testWebhook();
   await testDifferentMessageTypes();
-  
+
   console.log("\n✅ Testes concluídos!");
 }
 

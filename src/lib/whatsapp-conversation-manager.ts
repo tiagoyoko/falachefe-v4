@@ -43,13 +43,13 @@ export class WhatsAppConversationManager {
   /**
    * Processa uma mensagem recebida do webhook da UAZAPI
    */
-  async processIncomingMessage(webhookData: any): Promise<void> {
+  async processIncomingMessage(webhookData: Record<string, unknown>): Promise<void> {
     try {
       console.log("[WhatsApp] Processando mensagem recebida:", webhookData);
 
       // Extrair dados da mensagem conforme documentação UAZAPI
       const messageData = this.extractMessageData(webhookData);
-      
+
       if (!messageData) {
         console.log("[WhatsApp] Dados de mensagem inválidos, ignorando");
         return;
@@ -72,16 +72,21 @@ export class WhatsAppConversationManager {
 
       // Encontrar usuário pelo número do WhatsApp
       const user = await this.findUserByWhatsAppNumber(messageData.sender);
-      
+
       if (!user) {
-        console.log("[WhatsApp] Usuário não encontrado para o número:", messageData.sender);
-        await this.sendWelcomeMessage(messageData.sender, messageData.instanceId);
+        console.log(
+          "[WhatsApp] Usuário não encontrado para o número:",
+          messageData.sender
+        );
+        await this.sendWelcomeMessage(
+          messageData.sender,
+          messageData.instanceId
+        );
         return;
       }
 
       // Processar mensagem com agentes
       await this.processMessageWithAgents(messageData, user);
-
     } catch (error) {
       console.error("[WhatsApp] Erro ao processar mensagem:", error);
     }
@@ -90,7 +95,7 @@ export class WhatsAppConversationManager {
   /**
    * Extrai dados da mensagem do webhook da UAZAPI
    */
-  private extractMessageData(webhookData: any): WhatsAppMessage | null {
+  private extractMessageData(webhookData: Record<string, unknown>): WhatsAppMessage | null {
     try {
       const event = webhookData.event || webhookData.type;
       const instanceId = webhookData.instance || webhookData.instance_id || "";
@@ -106,9 +111,12 @@ export class WhatsAppConversationManager {
       const fromMe = Boolean(data.fromMe || data.wasSentByApi);
       const isGroup = Boolean(data.isGroup || data.isGroupMessage);
       const messageType = data.messageType || data.type || "text";
-      const messageText = data.text || data.body || data.message?.text || data.caption || "";
-      const messageTimestamp = data.messageTimestamp || data.timestamp || Date.now();
-      const sender = data.sender || data.from || data.author || data.participant || "";
+      const messageText =
+        data.text || data.body || data.message?.text || data.caption || "";
+      const messageTimestamp =
+        data.messageTimestamp || data.timestamp || Date.now();
+      const sender =
+        data.sender || data.from || data.author || data.participant || "";
       const receiver = data.receiver || data.to || "";
 
       return {
@@ -123,7 +131,7 @@ export class WhatsAppConversationManager {
         sender,
         receiver,
         instanceId,
-        raw: data
+        raw: data,
       };
     } catch (error) {
       console.error("[WhatsApp] Erro ao extrair dados da mensagem:", error);
@@ -149,7 +157,7 @@ export class WhatsAppConversationManager {
         mediaType: message.raw.mediaType || message.raw.mimetype || null,
         mediaUrl: message.raw.file || message.raw.url || null,
         providerMessageId: message.messageid,
-        raw: message.raw
+        raw: message.raw,
       });
     } catch (error) {
       console.error("[WhatsApp] Erro ao salvar mensagem recebida:", error);
@@ -159,11 +167,14 @@ export class WhatsAppConversationManager {
   /**
    * Encontra usuário pelo número do WhatsApp
    */
-  private async findUserByWhatsAppNumber(whatsappNumber: string): Promise<WhatsAppUser | null> {
+  private async findUserByWhatsAppNumber(
+    whatsappNumber: string
+  ): Promise<WhatsAppUser | null> {
     try {
       // Extrair apenas números do WhatsApp
       const numberOnly = whatsappNumber.replace(/\D/g, "");
-      const last11 = numberOnly.length >= 11 ? numberOnly.slice(-11) : numberOnly;
+      const last11 =
+        numberOnly.length >= 11 ? numberOnly.slice(-11) : numberOnly;
       const altNoDDI = numberOnly.replace(/^55/, "");
 
       // Buscar usuário pelos diferentes formatos de número
@@ -172,7 +183,7 @@ export class WhatsAppConversationManager {
           userId: userSettings.userId,
           whatsappNumber: userSettings.whatsappNumber,
           name: userSettings.name,
-          isActive: userSettings.isActive
+          isActive: userSettings.isActive,
         })
         .from(userSettings)
         .where(
@@ -196,7 +207,7 @@ export class WhatsAppConversationManager {
         userId: settings[0].userId,
         whatsappNumber: settings[0].whatsappNumber,
         name: settings[0].name || undefined,
-        isActive: settings[0].isActive
+        isActive: settings[0].isActive,
       };
     } catch (error) {
       console.error("[WhatsApp] Erro ao buscar usuário:", error);
@@ -207,7 +218,10 @@ export class WhatsAppConversationManager {
   /**
    * Envia mensagem de boas-vindas para usuários não cadastrados
    */
-  private async sendWelcomeMessage(sender: string, instanceId: string): Promise<void> {
+  private async sendWelcomeMessage(
+    sender: string,
+    _instanceId: string
+  ): Promise<void> {
     try {
       const welcomeText = `Olá! 👋
 
@@ -225,23 +239,32 @@ Obrigado! 🚀`;
       const result = await uazapiService.sendText({
         number: sender.replace(/\D/g, ""),
         text: welcomeText,
-        readchat: true
+        readchat: true,
       });
 
       if (result.success) {
         console.log("[WhatsApp] Mensagem de boas-vindas enviada para:", sender);
       } else {
-        console.error("[WhatsApp] Erro ao enviar mensagem de boas-vindas:", result.error);
+        console.error(
+          "[WhatsApp] Erro ao enviar mensagem de boas-vindas:",
+          result.error
+        );
       }
     } catch (error) {
-      console.error("[WhatsApp] Erro ao enviar mensagem de boas-vindas:", error);
+      console.error(
+        "[WhatsApp] Erro ao enviar mensagem de boas-vindas:",
+        error
+      );
     }
   }
 
   /**
    * Processa mensagem com o orquestrador
    */
-  private async processMessageWithAgents(message: WhatsAppMessage, user: WhatsAppUser): Promise<void> {
+  private async processMessageWithAgents(
+    message: WhatsAppMessage,
+    user: WhatsAppUser
+  ): Promise<void> {
     try {
       if (!message.messageText) {
         console.log("[WhatsApp] Mensagem sem texto, ignorando");
@@ -251,25 +274,32 @@ Obrigado! 🚀`;
       // Mostrar indicador de "digitando"
       await this.sendTypingIndicator(message.sender, message.instanceId);
 
-      console.log(`[WhatsApp] Processando mensagem com orquestrador para usuário: ${user.userId}`);
+      console.log(
+        `[WhatsApp] Processando mensagem com orquestrador para usuário: ${user.userId}`
+      );
 
       // Usar o orquestrador para processar a mensagem
       const orchestrator = getOrchestrator();
       const sessionId = `${user.userId}-whatsapp-${message.sender}`;
-      
+
       const response = await orchestrator.routeRequest({
         message: message.messageText,
         userId: user.userId,
-        sessionId: sessionId
+        sessionId: sessionId,
       });
 
       // Extrair mensagem da resposta
       const agentMessage = await extractAgentMessage(response);
-      
+
       if (agentMessage && agentMessage.message) {
         // Enviar resposta
-        await this.sendResponse(message.sender, agentMessage.message, message.instanceId, message.messageid);
-        
+        await this.sendResponse(
+          message.sender,
+          agentMessage.message,
+          message.instanceId,
+          message.messageid
+        );
+
         // Salvar mensagem enviada
         await this.saveOutgoingMessage(
           message.sender,
@@ -279,27 +309,34 @@ Obrigado! 🚀`;
           message.messageid
         );
       } else {
-        console.error("[WhatsApp] Erro ao processar mensagem com orquestrador:", response);
+        console.error(
+          "[WhatsApp] Erro ao processar mensagem com orquestrador:",
+          response
+        );
         await this.sendErrorResponse(message.sender, message.instanceId);
       }
-
     } catch (error) {
-      console.error("[WhatsApp] Erro ao processar mensagem com orquestrador:", error);
+      console.error(
+        "[WhatsApp] Erro ao processar mensagem com orquestrador:",
+        error
+      );
       await this.sendErrorResponse(message.sender, message.instanceId);
     }
   }
 
-
   /**
    * Envia indicador de "digitando"
    */
-  private async sendTypingIndicator(sender: string, instanceId: string): Promise<void> {
+  private async sendTypingIndicator(
+    sender: string,
+    instanceId: string
+  ): Promise<void> {
     try {
       const uazapiService = getUazapiService();
       await uazapiService.sendPresence({
         number: sender.replace(/\D/g, ""),
         presence: "composing",
-        delay: 1500
+        delay: 1500,
       });
     } catch (error) {
       console.error("[WhatsApp] Erro ao enviar indicador de digitando:", error);
@@ -309,7 +346,12 @@ Obrigado! 🚀`;
   /**
    * Envia resposta para o usuário
    */
-  private async sendResponse(sender: string, message: string, instanceId: string, replyId?: string): Promise<void> {
+  private async sendResponse(
+    sender: string,
+    message: string,
+    instanceId: string,
+    replyId?: string
+  ): Promise<void> {
     try {
       const uazapiService = getUazapiService();
       const result = await uazapiService.sendText({
@@ -317,7 +359,7 @@ Obrigado! 🚀`;
         text: message,
         readchat: true,
         readmessages: true,
-        replyid: replyId
+        replyid: replyId,
       });
 
       if (!result.success) {
@@ -331,7 +373,10 @@ Obrigado! 🚀`;
   /**
    * Envia mensagem de erro
    */
-  private async sendErrorResponse(sender: string, instanceId: string): Promise<void> {
+  private async sendErrorResponse(
+    sender: string,
+    _instanceId: string
+  ): Promise<void> {
     try {
       const errorText = `Desculpe, ocorreu um erro ao processar sua mensagem. 😔
 
@@ -367,7 +412,7 @@ Obrigado pela compreensão! 🙏`;
         messageType: "text",
         messageText: message,
         providerMessageId: replyId,
-        raw: { replyId }
+        raw: { replyId },
       });
     } catch (error) {
       console.error("[WhatsApp] Erro ao salvar mensagem enviada:", error);
@@ -375,4 +420,5 @@ Obrigado pela compreensão! 🙏`;
   }
 }
 
-export const whatsappConversationManager = WhatsAppConversationManager.getInstance();
+export const whatsappConversationManager =
+  WhatsAppConversationManager.getInstance();

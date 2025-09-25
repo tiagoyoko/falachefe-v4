@@ -50,7 +50,7 @@ async function updateUserToAdmin() {
       .where(eq(user.email, targetEmail));
 
     console.log(`✅ Usuário atualizado com sucesso!`);
-    console.log(`   Linhas afetadas: ${result.rowCount || 0}`);
+    console.log(`   Linhas afetadas: ${result.length || 0}`);
 
     // 3. Verificar a atualização
     console.log("\n3. Verificando atualização...");
@@ -77,7 +77,8 @@ async function updateUserToAdmin() {
     console.error("❌ Erro ao atualizar usuário:", error);
     process.exit(1);
   } finally {
-    await db.$disconnect();
+    // Não é necessário desconectar explicitamente com 'postgres'
+    // O pool de conexão é gerenciado automaticamente.
   }
 }
 

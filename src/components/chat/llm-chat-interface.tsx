@@ -23,6 +23,7 @@ interface Message {
   role: "user" | "assistant";
   timestamp: Date;
   suggestedActions?: LLMResponse["suggestedActions"];
+  agentName?: string; // Adicionado para identificar o agente que respondeu
 }
 
 interface LLMChatInterfaceProps {
@@ -48,13 +49,13 @@ export function LLMChatInterface({
         // Determinar qual agente respondeu baseado no tipo selecionado
         const agentMapping = {
           general: "Max",
-          finance: "Leo", 
+          finance: "Leo",
           marketing: "Max",
-          sales: "Max"
+          sales: "Max",
         };
-        
+
         const agentName = agentMapping[selectedCommandType];
-        
+
         const newMessage: Message = {
           id: Date.now().toString(),
           content: response.message,

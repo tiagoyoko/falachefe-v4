@@ -43,6 +43,16 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
     onError: (error) => console.error("Erro:", error),
   });
 
+  const loadMessages = useCallback(async (sessionId: string) => {
+    const history = await getConversationHistory(sessionId);
+    if (history) {
+      setMessages((prev) => ({
+        ...prev,
+        [sessionId]: history,
+      }));
+    }
+  }, [getConversationHistory]);
+
   const loadConversations = useCallback(async () => {
     const userConversations = await getUserConversations();
     if (userConversations) {
@@ -58,16 +68,6 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
-
-  const loadMessages = async (sessionId: string) => {
-    const history = await getConversationHistory(sessionId);
-    if (history) {
-      setMessages((prev) => ({
-        ...prev,
-        [sessionId]: history,
-      }));
-    }
-  };
 
   const createNewIndividualConversation = async () => {
     const conversation =

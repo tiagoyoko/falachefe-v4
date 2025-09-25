@@ -17,7 +17,7 @@ async function testAgentSquad() {
     const agents = orchestrator.getAllAgents();
     console.log(`\n📋 Agentes registrados: ${agents.length}`);
 
-    agents.forEach((agent: any, index: number) => {
+    agents.forEach((agent: { name: string; description: string }, index: number) => {
       console.log(`  ${index + 1}. ${agent.name} - ${agent.description}`);
     });
 

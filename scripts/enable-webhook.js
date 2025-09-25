@@ -1,6 +1,8 @@
 // Script para habilitar o webhook na UAZAPI
-const UAZAPI_BASE_URL = process.env.UAZAPI_BASE_URL || "https://falachefe.uazapi.com";
-const UAZAPI_TOKEN = process.env.UAZAPI_TOKEN || "6818e86e-ddf2-436c-952c-0d190b627624";
+const UAZAPI_BASE_URL =
+  process.env.UAZAPI_BASE_URL || "https://falachefe.uazapi.com";
+const UAZAPI_TOKEN =
+  process.env.UAZAPI_TOKEN || "6818e86e-ddf2-436c-952c-0d190b627624";
 const WEBHOOK_URL = "https://falachefe-v4.vercel.app/api/uazapi/webhook";
 
 async function enableWebhook() {
@@ -53,7 +55,7 @@ async function enableWebhook() {
 // Verificar se o webhook está funcionando
 async function testWebhook() {
   console.log("\n🧪 Testando webhook...");
-  
+
   try {
     const response = await fetch(WEBHOOK_URL, {
       method: "GET",
