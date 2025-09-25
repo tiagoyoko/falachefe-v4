@@ -12,17 +12,20 @@ O erro "Load failed" ao criar conta está ocorrendo porque:
 ## 🔧 **Soluções:**
 
 ### **Solução 1: Aguardar Deploy Automático**
+
 - O Vercel deve detectar o novo commit `368b291` em breve
 - As correções das variáveis `falachefe_` serão aplicadas
 - Autenticação voltará a funcionar
 
 ### **Solução 2: Forçar Redeploy Manual**
+
 1. Acesse [vercel.com/dashboard](https://vercel.com/dashboard)
 2. Vá para o projeto `falachefe-v4`
 3. Clique em **"Redeploy"** no último deployment
 4. Aguarde o build com as correções
 
 ### **Solução 3: Verificar Variáveis no Vercel**
+
 1. Vá para **Settings** → **Environment Variables**
 2. Confirme que as variáveis `falachefe_*` estão configuradas
 3. Verifique se estão marcadas para **Production**, **Preview** e **Development**
@@ -45,6 +48,7 @@ falachefe_POSTGRES_URL=postgres://postgres.zpdartuyaergbxmbmtur:qf5XdySZt5R5sB6n
 ## 🚀 **Resultado Esperado:**
 
 Após o deploy correto:
+
 - ✅ Variáveis `falachefe_` reconhecidas
 - ✅ Supabase conectado corretamente
 - ✅ Autenticação funcionando
