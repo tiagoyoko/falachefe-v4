@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { whatsappMessages, userSettings } from "./schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { getUazapiService } from "./uazapi-service";
 import { getOrchestrator } from "./orchestrator/agent-squad";
 import { extractAgentMessage } from "./orchestrator/response";

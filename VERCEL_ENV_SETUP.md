@@ -1,7 +1,9 @@
 # 🚨 Configuração de Variáveis de Ambiente no Vercel
 
 ## Problema Identificado
+
 O build está falhando com o erro:
+
 ```
 Error: @supabase/ssr: Your project's URL and API key are required to create a Supabase client!
 ```
@@ -9,6 +11,7 @@ Error: @supabase/ssr: Your project's URL and API key are required to create a Su
 ## ✅ Solução: Configurar Variáveis de Ambiente no Vercel
 
 ### 1. Acesse o Dashboard do Vercel
+
 1. Vá para [vercel.com/dashboard](https://vercel.com/dashboard)
 2. Selecione o projeto `falachefe-v4`
 3. Vá para **Settings** → **Environment Variables**
@@ -16,12 +19,14 @@ Error: @supabase/ssr: Your project's URL and API key are required to create a Su
 ### 2. Adicione as seguintes variáveis de ambiente:
 
 #### 🔐 Database (PostgreSQL)
+
 ```
 POSTGRES_URL=[sua_url_do_postgres_supabase]
 POSTGRES_URL_NON_POOLING=[sua_url_do_postgres_supabase_non_pooling]
 ```
 
 #### 🔑 Supabase Authentication
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=[sua_url_do_supabase]
 NEXT_PUBLIC_SUPABASE_ANON_KEY=[sua_chave_anonima_do_supabase]
@@ -29,12 +34,14 @@ SUPABASE_SERVICE_ROLE_KEY=[sua_chave_de_servico_do_supabase]
 ```
 
 #### 🤖 Google OAuth
+
 ```
 GOOGLE_CLIENT_ID=[seu_google_client_id]
 GOOGLE_CLIENT_SECRET=[seu_google_client_secret]
 ```
 
 #### 🧠 AI Integration (OpenAI)
+
 ```
 OPENAI_API_KEY=[sua_chave_da_openai]
 OPENAI_MODEL=gpt-4o-mini
@@ -42,16 +49,19 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-large
 ```
 
 #### 🌐 App Configuration
+
 ```
 NEXT_PUBLIC_APP_URL=https://falachefe-v4.vercel.app
 ```
 
 #### 📁 File Storage (Vercel Blob)
+
 ```
 BLOB_READ_WRITE_TOKEN=[seu_token_do_vercel_blob]
 ```
 
 #### 📱 UAZAPI (WhatsApp Integration)
+
 ```
 UAZAPI_BASE_URL=[sua_url_da_uazapi]
 UAZAPI_ADMIN_TOKEN=[seu_token_admin_da_uazapi]
@@ -66,6 +76,7 @@ UAZAPI_INSTANCE_TOKEN=[seu_token_de_instancia_da_uazapi]
 ### 3. ⚙️ Configurações Importantes:
 
 Para cada variável:
+
 - **Environment**: Selecione `Production`, `Preview` e `Development`
 - **Sensitive**: ✅ Marque como sensível para chaves e tokens
 - **Public**: ✅ Marque como público apenas para variáveis que começam com `NEXT_PUBLIC_`
@@ -84,6 +95,7 @@ Após configurar as variáveis, o build deve ser bem-sucedido e a aplicação es
 ## 🔍 Troubleshooting:
 
 Se ainda houver problemas:
+
 1. Verifique se todas as variáveis foram adicionadas corretamente
 2. Certifique-se de que não há espaços extras nas chaves/valores
 3. Verifique se as variáveis `NEXT_PUBLIC_*` estão marcadas como públicas
