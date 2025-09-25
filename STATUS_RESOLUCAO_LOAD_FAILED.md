@@ -7,6 +7,7 @@
 **Teste realizado em:** 25/09/2025 19:33:18
 
 **Variáveis de ambiente verificadas:**
+
 ```json
 {
   "hasFalachefeSupabaseUrl": true,
