@@ -3,6 +3,8 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 const connectionString =
+  (process.env.falachefe_POSTGRES_URL as string) ||
+  (process.env.falachefe_POSTGRES_URL_NON_POOLING as string) ||
   (process.env.POSTGRES_URL as string) ||
   (process.env.POSTGRES_URL_NON_POOLING as string);
 
