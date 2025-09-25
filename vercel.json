@@ -1,0 +1,17 @@
+{
+    "functions": {
+        "src/app/api/**/*.ts": {
+            "runtime": "nodejs20.x"
+        }
+    },
+    "buildCommand": "next build",
+    "devCommand": "next dev --turbopack",
+    "installCommand": "pnpm install",
+    "framework": "nextjs",
+    "regions": [
+        "iad1"
+    ],
+    "env": {
+        "NODE_VERSION": "20"
+    }
+}

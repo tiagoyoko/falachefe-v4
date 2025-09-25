@@ -13,6 +13,10 @@
   ],
   "author": "Agência Vibe Code <contato@agenciavibecode.com>",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
