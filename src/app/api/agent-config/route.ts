@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-server";
 import { db } from "@/lib/db";
 import { agentProfiles } from "@/lib/schema";
 import { eq } from "drizzle-orm";
@@ -8,16 +7,15 @@ import { nanoid } from "nanoid";
 
 export async function GET() {
   try {
-    const hdrs = await headers();
-    const session = await auth.api.getSession({ headers: hdrs });
-    if (!session?.user?.id) {
+    const user = await getUser();
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const rows = await db
       .select()
       .from(agentProfiles)
-      .where(eq(agentProfiles.userId, session.user.id));
+      .where(eq(agentProfiles.userId, user.id));
 
     return NextResponse.json({ success: true, data: rows });
   } catch (e) {
@@ -28,9 +26,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const hdrs = await headers();
-    const session = await auth.api.getSession({ headers: hdrs });
-    if (!session?.user?.id) {
+    const user = await getUser();
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
@@ -58,7 +55,7 @@ export async function POST(request: NextRequest) {
       .insert(agentProfiles)
       .values({
         id: nanoid(),
-        userId: session.user.id,
+        userId: user.id,
         agent,
         settings: payload,
       })

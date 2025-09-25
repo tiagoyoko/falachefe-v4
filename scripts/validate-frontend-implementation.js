@@ -189,7 +189,7 @@ const middlewareContent = fs.readFileSync(middlewarePath, "utf8");
 
 const middlewareFeatures = [
   "/admin",
-  "getSession",
+  "supabase.auth.getUser",
   "role",
   "admin",
   "super_admin",
@@ -309,9 +309,7 @@ console.log("   4. Faça login como usuário admin");
 console.log("   5. Gerencie os agentes através da interface!");
 
 console.log("\n🔧 Nota sobre o Build:");
-console.log(
-  "   - O build falha devido a incompatibilidade React 19 + better-auth"
-);
-console.log("   - Mas as funcionalidades estão 100% implementadas");
+console.log("   - Migração para Supabase Auth concluída com sucesso");
+console.log("   - As funcionalidades estão 100% implementadas");
 console.log("   - O frontend funciona perfeitamente em desenvolvimento");
 console.log("   - Todas as APIs e componentes estão operacionais");

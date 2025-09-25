@@ -1,19 +1,67 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getSession } from "@/lib/auth-client";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Se não estiver logado e tentar acessar rotas protegidas
+  if (
+    !user &&
+    (request.nextUrl.pathname.startsWith("/dashboard") ||
+      request.nextUrl.pathname.startsWith("/admin"))
+  ) {
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  }
+
+  // Se estiver logado e tentar acessar páginas de auth
+  if (user && request.nextUrl.pathname.startsWith("/auth")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   // Verificar se é uma rota de admin
   if (request.nextUrl.pathname.startsWith("/admin")) {
     try {
-      const session = await getSession();
-
-      if (!session?.data?.user?.id) {
-        return NextResponse.redirect(new URL("/auth/signin", request.url));
-      }
-
       // Verificar se o usuário é admin
-      const userRole = (session.data.user as { role?: string }).role || "user";
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("role")
+        .eq("id", user?.id)
+        .single();
+
+      const userRole = profile?.role || "user";
       if (userRole !== "admin" && userRole !== "super_admin") {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
@@ -23,9 +71,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

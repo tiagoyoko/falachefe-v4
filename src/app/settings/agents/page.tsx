@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth-client";
+import { getSession } from "@/lib/auth-server";
 import React from "react";
 import { AgentSettingsForm } from "@/components/agent-settings-form";
 import { cookies } from "next/headers";

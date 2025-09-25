@@ -32,13 +32,15 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 - **Next.js API Routes** para endpoints
 - **Better Auth** para autenticação
 - **Drizzle ORM** para banco de dados
-- **PostgreSQL** como banco principal
+- **PostgreSQL + pgvector** para busca vetorial
+- **Agent-Squad** para orquestração de agentes
 
 ### Integrações
 
 - **Google OAuth** para autenticação
 - **Vercel AI SDK** para processamento de IA
-- **OpenAI** para comandos de linguagem natural
+- **OpenAI** para comandos de linguagem natural e embeddings
+- **UazAPI** para integração WhatsApp
 
 ## 🎯 Funcionalidades Implementadas
 
@@ -55,6 +57,7 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 - Login com Google OAuth
 - Gerenciamento de sessões
 - Proteção de rotas
+- Sistema de roles (admin/super_admin)
 
 ### ✅ Interface Moderna
 
@@ -62,6 +65,29 @@ Uma plataforma inovadora projetada especificamente para pequenos e micro empres�
 - Componentes shadcn/ui
 - Toast notifications
 - Loading states e animações
+
+### ✅ Sistema de Agentes com Memória Persistente
+
+- **Agentes Especializados**: Leo (Financeiro), Max (Marketing), Lia (RH)
+- **Memória Persistente**: Conversas e contexto mantidos entre sessões
+- **Sistema de Contexto**: Histórico de transações e conversas
+- **Integração RAG**: Busca em base de conhecimento
+
+### ✅ Administração de Agentes
+
+- **Interface de Gerenciamento**: Painel completo em `/admin/agents`
+- **CRUD de Agentes**: Criar, editar, deletar e ativar/desativar
+- **Personalização**: Ajustar personalidade, tom de voz e descrição
+- **Sistema de Permissões**: Acesso restrito a administradores
+- **APIs RESTful**: Endpoints completos para gerenciamento
+
+### ✅ Base de Conhecimento com Busca Vetorial
+
+- **Upload de Documentos**: PDF, DOCX, TXT, MD, HTML
+- **Busca Semântica**: Utilizando pgvector para busca por similaridade
+- **Associação com Agentes**: Documentos específicos ou globais
+- **Processamento Inteligente**: Chunking e geração de embeddings
+- **Interface Administrativa**: Gerenciamento completo de documentos
 
 ## 🚀 Como Executar
 
@@ -179,28 +205,42 @@ pnpm db:studio    # Drizzle Studio
 - **transactions**: Transações financeiras
 - **userSettings**: Configurações do usuário
 
+## 📚 Documentação
+
+### Funcionalidades
+
+- [Sistema de Administração de Agentes](docs/features/admin-agent-management.md)
+- [Base de Conhecimento com Busca Vetorial](docs/features/knowledge-base-vector-search.md)
+- [Implementação de Memória Persistente](docs/features/persistent-memory-implementation.md)
+
+### Técnica
+
+- [Arquitetura da Base de Conhecimento](docs/technical/knowledge-base-architecture.md)
+- [Especificação Técnica](docs/technical/knowledge-base-specification.md)
+- [Exemplos de Uso](docs/examples/knowledge-base-usage-examples.md)
+
 ## 🎯 Próximos Passos
 
 ### Curto Prazo
 
-- [ ] Integração com WhatsApp
-- [ ] Sistema de lembretes
-- [ ] Dashboard financeiro
-- [ ] Relatórios básicos
+- [ ] Implementação da Base de Conhecimento
+- [ ] Integração completa com WhatsApp
+- [ ] Dashboard financeiro avançado
+- [ ] Sistema de relatórios
 
 ### Médio Prazo
 
-- [ ] Agentes especializados (Marketing, Vendas)
-- [ ] IA proativa para insights
+- [ ] Upload em lote de documentos
+- [ ] Analytics de uso da base de conhecimento
 - [ ] Integrações bancárias
-- [ ] Backup e sincronização
+- [ ] Sistema de backup automático
 
 ### Longo Prazo
 
-- [ ] Marketplace de serviços
-- [ ] Analytics avançados
-- [ ] API pública
-- [ ] Mobile app
+- [ ] IA para categorização automática
+- [ ] Busca por imagem (OCR)
+- [ ] API pública para integrações
+- [ ] Mobile app nativo
 
 ## 🤝 Contribuindo
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { OnboardingWelcome } from "./onboarding-welcome";
 import { CompanyInfoForm, type CompanyFormData } from "./company-info-form";
@@ -30,7 +30,7 @@ interface OnboardingData {
 
 export function OnboardingFlow() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const {} = useAuth();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     selectedFeatures: [],
@@ -150,7 +150,8 @@ export function OnboardingFlow() {
     }
   };
 
-  if (!session) {
+  if (false) {
+    // TODO: Implementar verificação de sessão
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -212,8 +213,8 @@ export function OnboardingFlow() {
                         isActive
                           ? "text-primary font-medium"
                           : isCompleted
-                          ? "text-green-600"
-                          : "text-muted-foreground"
+                            ? "text-green-600"
+                            : "text-muted-foreground"
                       }`}
                     >
                       <Icon
@@ -237,10 +238,7 @@ export function OnboardingFlow() {
       {/* Conteúdo principal */}
       <div className="container mx-auto py-8">
         {currentStep === "welcome" && (
-          <OnboardingWelcome
-            onNext={handleWelcomeNext}
-            userName={session.user.name || undefined}
-          />
+          <OnboardingWelcome onNext={handleWelcomeNext} userName={undefined} />
         )}
 
         {currentStep === "company" && (
@@ -271,7 +269,7 @@ export function OnboardingFlow() {
           <OnboardingCompletion
             onComplete={handleComplete}
             userData={{
-              userName: session.user.name || "Usuário",
+              userName: "Usuário",
               companyName: onboardingData.companyInfo?.name || "Sua Empresa",
               whatsappNumber: onboardingData.whatsappNumber,
               selectedFeatures: onboardingData.selectedFeatures,

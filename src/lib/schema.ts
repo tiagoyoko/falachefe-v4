@@ -353,3 +353,65 @@ export const ragEmbeddings = pgTable("ragEmbeddings", {
   dims: integer("dims").notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
+
+// ===== BASE DE CONHECIMENTO COM BUSCA VETORIAL =====
+
+// Tabela principal de documentos de conhecimento
+export const knowledgeDocuments = pgTable("knowledgeDocuments", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  filePath: text("filePath"),
+  fileType: text("fileType").notNull(), // 'pdf' | 'docx' | 'txt' | 'md' | 'html'
+  fileSize: integer("fileSize").notNull(),
+  metadata: json("metadata").default({}), // Metadados adicionais
+  agentId: text("agentId").references(() => agents.id, { onDelete: "cascade" }),
+  isGlobal: boolean("isGlobal").notNull().default(false),
+  status: text("status").notNull().default("processing"), // 'processing' | 'active' | 'error'
+  createdBy: text("createdBy")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+// Tabela de chunks de documentos
+export const knowledgeChunks = pgTable("knowledgeChunks", {
+  id: text("id").primaryKey(),
+  documentId: text("documentId")
+    .notNull()
+    .references(() => knowledgeDocuments.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  chunkIndex: integer("chunkIndex").notNull(),
+  tokenCount: integer("tokenCount"),
+  metadata: json("metadata").default({}),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+// Tabela de embeddings vetoriais (usando pgvector)
+export const knowledgeEmbeddings = pgTable("knowledgeEmbeddings", {
+  id: text("id").primaryKey(),
+  chunkId: text("chunkId")
+    .notNull()
+    .references(() => knowledgeChunks.id, { onDelete: "cascade" }),
+  embedding: json("embedding").notNull(), // VECTOR(1536) - será convertido para JSON no Drizzle
+  model: text("model").notNull().default("text-embedding-ada-002"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+// Tabela de associações agente-documento
+export const agentKnowledgeAssociations = pgTable(
+  "agentKnowledgeAssociations",
+  {
+    id: text("id").primaryKey(),
+    agentId: text("agentId")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    documentId: text("documentId")
+      .notNull()
+      .references(() => knowledgeDocuments.id, { onDelete: "cascade" }),
+    priority: integer("priority").notNull().default(1),
+    isActive: boolean("isActive").notNull().default(true),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  }
+);

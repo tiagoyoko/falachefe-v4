@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-server";
 import { db } from "@/lib/db";
 import { defaultCategories } from "@/lib/schema";
 import { nanoid } from "nanoid";
@@ -149,11 +148,9 @@ const DEFAULT_CATEGORIES_DATA = [
 
 export async function GET() {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const user = await getUser();
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
@@ -177,11 +174,9 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const user = await getUser();
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 

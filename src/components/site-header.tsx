@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { UserProfile } from "@/components/auth/user-profile";
 import { ModeToggle } from "./ui/mode-toggle";
-import { Bot, MessageSquare, Wallet, Settings } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
+import { Bot, MessageSquare, Wallet, Settings, FileText } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export function SiteHeader() {
-  const { data: session } = useSession();
-  const isLoggedIn = Boolean(session);
-  const isAdmin =
-    (session?.user as { role?: string })?.role === "admin" ||
-    (session?.user as { role?: string })?.role === "super_admin";
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user);
+  // TODO: Implementar verificação de admin role
+  const isAdmin = false;
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -47,13 +46,22 @@ export function SiteHeader() {
                   Financeiro
                 </Link>
                 {isAdmin && (
-                  <Link
-                    href="/admin/agents"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Admin
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin/agents"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Agentes
+                    </Link>
+                    <Link
+                      href="/admin/knowledge-base"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Base de Conhecimento
+                    </Link>
+                  </>
                 )}
               </>
             )}

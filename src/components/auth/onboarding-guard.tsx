@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { useOnboarding } from "@/hooks/use-onboarding";
 
 interface OnboardingGuardProps {
@@ -17,7 +17,7 @@ export function OnboardingGuard({
   allowUnauthenticated = false,
 }: OnboardingGuardProps) {
   const router = useRouter();
-  const { data: session, isPending: sessionLoading } = useSession();
+  const { user, loading: sessionLoading } = useAuth();
   const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
 
   useEffect(() => {
@@ -27,18 +27,18 @@ export function OnboardingGuard({
     }
 
     // Se não está autenticado e não permite não autenticado, redirecionar para home
-    if (!session && !allowUnauthenticated) {
+    if (!user && !allowUnauthenticated) {
       router.push("/");
       return;
     }
 
     // Se está autenticado mas precisa fazer onboarding, redirecionar
-    if (session && needsOnboarding) {
+    if (user && needsOnboarding) {
       router.push(redirectTo);
       return;
     }
   }, [
-    session,
+    user,
     sessionLoading,
     needsOnboarding,
     onboardingLoading,
@@ -60,12 +60,12 @@ export function OnboardingGuard({
   }
 
   // Se não está autenticado e não permite, não mostrar nada (redirecionamento acontecerá)
-  if (!session && !allowUnauthenticated) {
+  if (!user && !allowUnauthenticated) {
     return null;
   }
 
   // Se precisa fazer onboarding, não mostrar nada (redirecionamento acontecerá)
-  if (session && needsOnboarding) {
+  if (user && needsOnboarding) {
     return null;
   }
 

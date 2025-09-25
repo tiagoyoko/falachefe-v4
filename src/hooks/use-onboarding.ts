@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 
 interface OnboardingStatus {
   onboardingCompleted: boolean;
@@ -9,7 +9,7 @@ interface OnboardingStatus {
 }
 
 export function useOnboarding() {
-  const { data: session, isPending: sessionLoading } = useSession();
+  const { user, loading: sessionLoading } = useAuth();
   const [onboardingStatus, setOnboardingStatus] =
     useState<OnboardingStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +17,7 @@ export function useOnboarding() {
 
   useEffect(() => {
     async function checkOnboardingStatus() {
-      if (!session?.user?.id || sessionLoading) {
+      if (!user?.id || sessionLoading) {
         setIsLoading(false);
         return;
       }
@@ -45,7 +45,7 @@ export function useOnboarding() {
     }
 
     checkOnboardingStatus();
-  }, [session, sessionLoading]);
+  }, [user, sessionLoading]);
 
   const markOnboardingComplete = () => {
     setOnboardingStatus({
@@ -59,9 +59,7 @@ export function useOnboarding() {
     isLoading: isLoading || sessionLoading,
     error,
     needsOnboarding:
-      session?.user?.id &&
-      onboardingStatus &&
-      !onboardingStatus.onboardingCompleted,
+      user?.id && onboardingStatus && !onboardingStatus.onboardingCompleted,
     markOnboardingComplete,
   };
 }

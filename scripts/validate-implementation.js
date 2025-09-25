@@ -85,18 +85,18 @@ if (fs.existsSync(supervisorFile)) {
   console.log("❌ supervisor.ts não encontrado");
 }
 
-// 5. Verificar se os problemas de build foram corrigidos
-console.log("\n5. Verificando correções de build...");
-const authClientFile = path.join(__dirname, "../src/lib/auth-client.ts");
-if (fs.existsSync(authClientFile)) {
-  const content = fs.readFileSync(authClientFile, "utf8");
-  const hasSendMagicLink = content.includes("sendMagicLink");
+// 5. Verificar se a migração para Supabase Auth foi concluída
+console.log("\n5. Verificando migração para Supabase Auth...");
+const authServerFile = path.join(__dirname, "../src/lib/auth-server.ts");
+if (fs.existsSync(authServerFile)) {
+  const content = fs.readFileSync(authServerFile, "utf8");
+  const hasSupabaseAuth = content.includes("supabase.auth");
 
   console.log(
-    `   - sendMagicLink removido: ${!hasSendMagicLink ? "✅" : "❌"}`
+    `   - Supabase Auth implementado: ${hasSupabaseAuth ? "✅" : "❌"}`
   );
 } else {
-  console.log("❌ auth-client.ts não encontrado");
+  console.log("❌ auth-server.ts não encontrado");
 }
 
 // 6. Verificar se o componente Tabs foi criado

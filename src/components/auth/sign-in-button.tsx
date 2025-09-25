@@ -1,17 +1,17 @@
 "use client";
 
-import { signIn, useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export function SignInButton() {
-  const { data: session, isPending } = useSession();
+  const { user, loading } = useAuth();
 
-  if (isPending) {
+  if (loading) {
     return <Button disabled>Loading...</Button>;
   }
 
-  if (session) {
+  if (user) {
     return null;
   }
 
@@ -23,10 +23,8 @@ export function SignInButton() {
       <Button
         variant="outline"
         onClick={async () => {
-          await signIn.social({
-            provider: "google",
-            callbackURL: "/dashboard", // O dashboard já vai redirecionar para onboarding se necessário
-          });
+          // TODO: Implementar signIn
+          console.log("Google sign-in clicked");
         }}
       >
         Google

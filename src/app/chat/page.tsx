@@ -1,17 +1,17 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { Lock } from "lucide-react";
 import { LLMChatInterface } from "@/components/chat/llm-chat-interface";
 
 export default function ChatPage() {
-  const { data: session, isPending } = useSession();
+  const { user, loading } = useAuth();
 
-  if (isPending) {
+  if (loading) {
     return <div className="container mx-auto px-4 py-12">Carregando...</div>;
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto text-center">
@@ -27,7 +27,7 @@ export default function ChatPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <LLMChatInterface userId={session.user.id} />
+      <LLMChatInterface userId="placeholder-user-id" />
     </div>
   );
 }

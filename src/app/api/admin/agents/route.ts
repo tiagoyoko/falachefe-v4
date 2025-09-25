@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth-client";
+import { getUser } from "@/lib/auth-server";
 import { agentManagementService } from "@/lib/agent-management-service";
 
 // GET /api/admin/agents - Listar todos os agentes
 export async function GET() {
   try {
-    const session = await getSession();
+    const user = await getUser();
 
-    if (!session?.data?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    const agents = await agentManagementService.listAgents(
-      session.data.user.id
-    );
+    const agents = await agentManagementService.listAgents(user.id);
 
     return NextResponse.json({
       success: true,
@@ -34,9 +32,9 @@ export async function GET() {
 // POST /api/admin/agents - Criar novo agente
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
+    const user = await getUser();
 
-    if (!session?.data?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
@@ -62,7 +60,7 @@ export async function POST(request: NextRequest) {
         tone,
         capabilities,
       },
-      session.data.user.id
+      user.id
     );
 
     return NextResponse.json({

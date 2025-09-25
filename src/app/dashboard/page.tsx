@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { UserProfile } from "@/components/auth/user-profile";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight } from "lucide-react";
@@ -11,19 +11,19 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function DashboardPage() {
-  const { data: session, isPending } = useSession();
+  const { user, loading } = useAuth();
   const { isAiReady, loading: diagnosticsLoading } = useDiagnostics();
   const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
   const router = useRouter();
 
   // Redirecionar para onboarding se necessário
   useEffect(() => {
-    if (!isPending && !onboardingLoading && needsOnboarding) {
+    if (!loading && !onboardingLoading && needsOnboarding) {
       router.push("/onboarding");
     }
-  }, [isPending, onboardingLoading, needsOnboarding, router]);
+  }, [loading, onboardingLoading, needsOnboarding, router]);
 
-  if (isPending || onboardingLoading) {
+  if (loading || onboardingLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         Loading...
@@ -48,7 +48,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto text-center">
@@ -93,10 +93,10 @@ export default function DashboardPage() {
           </p>
           <div className="space-y-2">
             <p>
-              <strong>Name:</strong> {session.user.name}
+              <strong>Name:</strong> {user.user_metadata?.full_name || "N/A"}
             </p>
             <p>
-              <strong>Email:</strong> {session.user.email}
+              <strong>Email:</strong> {user.email}
             </p>
           </div>
         </div>

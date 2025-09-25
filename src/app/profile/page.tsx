@@ -1,19 +1,25 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Calendar, User, Shield, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { data: session, isPending } = useSession();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
-  if (isPending) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div>Loading...</div>
@@ -21,17 +27,17 @@ export default function ProfilePage() {
     );
   }
 
-  if (!session) {
+  if (!user) {
     router.push("/");
     return null;
   }
-
-  const user = session.user;
-  const createdDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : null;
+  const createdDate = user.created_at
+    ? new Date(user.created_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
@@ -54,26 +60,21 @@ export default function ProfilePage() {
           <CardHeader>
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage
-                  src={user.image || ""}
-                  alt={user.name || "User"}
-                  referrerPolicy="no-referrer"
-                />
+                <AvatarImage src="" alt="User" referrerPolicy="no-referrer" />
                 <AvatarFallback className="text-lg">
-                  {(
-                    user.name?.[0] ||
-                    user.email?.[0] ||
-                    "U"
-                  ).toUpperCase()}
+                  {(user.email?.[0] || "U").toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">{user.name}</h2>
+                <h2 className="text-2xl font-semibold">User</h2>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4" />
                   <span>{user.email}</span>
-                  {user.emailVerified && (
-                    <Badge variant="outline" className="text-green-600 border-green-600">
+                  {false && ( // TODO: Implementar verificação de email
+                    <Badge
+                      variant="outline"
+                      className="text-green-600 border-green-600"
+                    >
                       <Shield className="h-3 w-3 mr-1" />
                       Verified
                     </Badge>
@@ -94,9 +95,7 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
-            <CardDescription>
-              Your account details and settings
-            </CardDescription>
+            <CardDescription>Your account details and settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -105,7 +104,7 @@ export default function ProfilePage() {
                   Full Name
                 </label>
                 <div className="p-3 border rounded-md bg-muted/10">
-                  {user.name || "Not provided"}
+                  {"Not provided"}
                 </div>
               </div>
               <div className="space-y-2">
@@ -114,17 +113,20 @@ export default function ProfilePage() {
                 </label>
                 <div className="p-3 border rounded-md bg-muted/10 flex items-center justify-between">
                   <span>{user.email}</span>
-                  {user.emailVerified && (
-                    <Badge variant="outline" className="text-green-600 border-green-600">
+                  {false && ( // TODO: Implementar verificação de email
+                    <Badge
+                      variant="outline"
+                      className="text-green-600 border-green-600"
+                    >
                       Verified
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
-            
+
             <Separator />
-            
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Account Status</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,9 +137,7 @@ export default function ProfilePage() {
                       Email address verification status
                     </p>
                   </div>
-                  <Badge variant={user.emailVerified ? "default" : "secondary"}>
-                    {user.emailVerified ? "Verified" : "Unverified"}
-                  </Badge>
+                  <Badge variant="secondary">Unverified</Badge>
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
@@ -171,7 +171,10 @@ export default function ProfilePage() {
                     <p className="text-sm text-muted-foreground">Active now</p>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Badge
+                  variant="outline"
+                  className="text-green-600 border-green-600"
+                >
                   Active
                 </Badge>
               </div>
@@ -189,25 +192,43 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="justify-start h-auto p-4" disabled>
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                disabled
+              >
                 <User className="h-4 w-4 mr-2" />
                 <div className="text-left">
                   <div className="font-medium">Edit Profile</div>
-                  <div className="text-xs text-muted-foreground">Update your information</div>
+                  <div className="text-xs text-muted-foreground">
+                    Update your information
+                  </div>
                 </div>
               </Button>
-              <Button variant="outline" className="justify-start h-auto p-4" disabled>
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                disabled
+              >
                 <Shield className="h-4 w-4 mr-2" />
                 <div className="text-left">
                   <div className="font-medium">Security Settings</div>
-                  <div className="text-xs text-muted-foreground">Manage security options</div>
+                  <div className="text-xs text-muted-foreground">
+                    Manage security options
+                  </div>
                 </div>
               </Button>
-              <Button variant="outline" className="justify-start h-auto p-4" disabled>
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                disabled
+              >
                 <Mail className="h-4 w-4 mr-2" />
                 <div className="text-left">
                   <div className="font-medium">Email Preferences</div>
-                  <div className="text-xs text-muted-foreground">Configure notifications</div>
+                  <div className="text-xs text-muted-foreground">
+                    Configure notifications
+                  </div>
                 </div>
               </Button>
             </div>

@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth-client";
+import { getUser } from "@/lib/auth-server";
 import { agentManagementService } from "@/lib/agent-management-service";
 
 // GET /api/admin/agents/[id] - Obter agente específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
+    const { id } = await params;
+    const user = await getUser();
 
-    if (!session?.data?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    const agent = await agentManagementService.getAgent(
-      params.id,
-      session.data.user.id
-    );
+    const agent = await agentManagementService.getAgent(id, user.id);
 
     if (!agent) {
       return NextResponse.json(
@@ -45,12 +43,13 @@ export async function GET(
 // PUT /api/admin/agents/[id] - Atualizar agente
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
+    const { id } = await params;
+    const user = await getUser();
 
-    if (!session?.data?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
@@ -58,7 +57,7 @@ export async function PUT(
     const { displayName, description, tone, capabilities, isActive } = body;
 
     const agent = await agentManagementService.updateAgent(
-      params.id,
+      id,
       {
         displayName,
         description,
@@ -66,7 +65,7 @@ export async function PUT(
         capabilities,
         isActive,
       },
-      session.data.user.id
+      user.id
     );
 
     return NextResponse.json({
@@ -88,16 +87,17 @@ export async function PUT(
 // DELETE /api/admin/agents/[id] - Deletar agente
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
+    const { id } = await params;
+    const user = await getUser();
 
-    if (!session?.data?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    await agentManagementService.deleteAgent(params.id, session.data.user.id);
+    await agentManagementService.deleteAgent(id, user.id);
 
     return NextResponse.json({
       success: true,

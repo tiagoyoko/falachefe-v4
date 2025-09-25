@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth-client";
+import { getUser } from "@/lib/auth-server";
 import { agentManagementService } from "@/lib/agent-management-service";
 
 // POST /api/admin/agents/[id]/toggle - Ativar/Desativar agente
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
+    const { id } = await params;
+    const user = await getUser();
 
-    if (!session?.data?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    const agent = await agentManagementService.toggleAgentStatus(
-      params.id,
-      session.data.user.id
-    );
+    const agent = await agentManagementService.toggleAgentStatus(id, user.id);
 
     return NextResponse.json({
       success: true,
