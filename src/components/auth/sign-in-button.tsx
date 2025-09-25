@@ -2,6 +2,7 @@
 
 import { signIn, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function SignInButton() {
   const { data: session, isPending } = useSession();
@@ -15,15 +16,21 @@ export function SignInButton() {
   }
 
   return (
-    <Button
-      onClick={async () => {
-        await signIn.social({
-          provider: "google",
-          callbackURL: "/dashboard", // O dashboard já vai redirecionar para onboarding se necessário
-        });
-      }}
-    >
-      Entrar com Google
-    </Button>
+    <div className="flex gap-2">
+      <Button asChild>
+        <Link href="/auth/signin">Entrar</Link>
+      </Button>
+      <Button
+        variant="outline"
+        onClick={async () => {
+          await signIn.social({
+            provider: "google",
+            callbackURL: "/dashboard", // O dashboard já vai redirecionar para onboarding se necessário
+          });
+        }}
+      >
+        Google
+      </Button>
+    </div>
   );
 }

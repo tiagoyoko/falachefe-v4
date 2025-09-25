@@ -163,7 +163,9 @@ export class UazapiService {
     }
   }
 
-  async markMessagesRead(payload: { messages: string[] }): Promise<UazapiResponse> {
+  async markMessagesRead(payload: {
+    messages: string[];
+  }): Promise<UazapiResponse> {
     try {
       const res = await fetch(`${this.baseUrl}/message/markread`, {
         method: "POST",

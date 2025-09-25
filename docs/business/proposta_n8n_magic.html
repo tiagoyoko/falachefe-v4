@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Proposta Comercial — n8n em Produção</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --brand-primary: #5b4bff;
+      --brand-secondary: #17c2ff;
+      --brand-dark: #080b1b;
+      --surface: rgba(12, 16, 38, 0.78);
+      --surface-strong: rgba(18, 24, 52, 0.85);
+      --surface-soft: rgba(255, 255, 255, 0.06);
+      --text-primary: #f7f9ff;
+      --text-secondary: #cfd7ff;
+      --border-soft: rgba(255, 255, 255, 0.12);
+      --radius-sm: 14px;
+      --radius-md: 22px;
+      --shadow-soft: 0 22px 55px rgba(8, 11, 27, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background:
+        radial-gradient(120% 140% at 12% 18%, rgba(91, 75, 255, 0.18), transparent),
+        radial-gradient(90% 120% at 85% 0%, rgba(23, 194, 255, 0.22), transparent),
+        var(--brand-dark);
+      padding: 48px 20px 64px;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--surface-soft);
+      border-radius: 28px;
+      padding: clamp(32px, 5vw, 56px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    header.hero {
+      display: grid;
+      gap: clamp(24px, 4vw, 48px);
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-bottom: clamp(40px, 6vw, 72px);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(91, 75, 255, 0.16), rgba(23, 194, 255, 0.14));
+      border: 1px solid rgba(112, 123, 255, 0.35);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 20px 0 12px;
+      font-size: clamp(2.2rem, 5vw, 3.1rem);
+      line-height: 1.08;
+      color: #ffffff;
+    }
+
+    header.hero p.lead {
+      font-size: clamp(1rem, 2.6vw, 1.22rem);
+      color: var(--text-secondary);
+      margin: 0 0 28px;
+      max-width: 520px;
+    }
+
+    .pill-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      background: rgba(23, 194, 255, 0.12);
+      border: 1px solid rgba(23, 194, 255, 0.22);
+      color: var(--text-secondary);
+    }
+
+    .meta-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .meta-card {
+      background: var(--surface-strong);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .meta-card strong {
+      color: #ffffff;
+      font-size: 0.95rem;
+    }
+
+    section {
+      margin-bottom: clamp(40px, 6vw, 70px);
+    }
+
+    section:last-of-type {
+      margin-bottom: 0;
+    }
+
+    section h2 {
+      font-size: clamp(1.4rem, 2.4vw, 1.95rem);
+      margin: 0 0 18px;
+      color: #ffffff;
+    }
+
+    section .section-lead {
+      margin: 0 0 24px;
+      color: var(--text-secondary);
+      max-width: 720px;
+      font-size: 1rem;
+    }
+
+    .card-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card-grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card-grid.three {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--surface-soft);
+      border-radius: var(--radius-md);
+      padding: clamp(20px, 3vw, 28px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .card.highlight {
+      background: linear-gradient(135deg, rgba(91, 75, 255, 0.2), rgba(23, 194, 255, 0.18));
+      border: 1px solid rgba(118, 138, 255, 0.35);
+      color: #ffffff;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #ffffff;
+    }
+
+    .card p,
+    .card ul {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.98rem;
+    }
+
+    ul {
+      padding-left: 1.1rem;
+    }
+
+    li {
+      margin: 0.4em 0;
+    }
+
+    li strong {
+      color: #ffffff;
+    }
+
+    .note {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 12px;
+    }
+
+    .option-card {
+      position: relative;
+      padding-top: 46px;
+    }
+
+    .badge {
+      position: absolute;
+      top: 18px;
+      left: 24px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+    }
+
+    .support-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .support-grid ul {
+      padding-left: 1rem;
+    }
+
+    .pricing-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(103, 128, 255, 0.28);
+    }
+
+    .pricing-card ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .pricing-card li {
+      display: grid;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .pricing-card span.amount {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .next-steps {
+      background: linear-gradient(135deg, rgba(91, 75, 255, 0.28), rgba(23, 194, 255, 0.24));
+      border: 1px solid rgba(118, 138, 255, 0.35);
+      border-radius: var(--radius-md);
+      padding: clamp(24px, 3.4vw, 34px);
+      display: grid;
+      gap: 12px;
+      color: #ffffff;
+    }
+
+    .next-steps p {
+      margin: 0;
+      color: #f1f4ff;
+    }
+
+    form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--surface-soft);
+      border-radius: var(--radius-md);
+      padding: clamp(24px, 3.4vw, 34px);
+      display: grid;
+      gap: 18px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #ffffff;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(9, 13, 33, 0.85);
+      color: var(--text-primary);
+      font-size: 0.98rem;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(91, 75, 255, 0.7);
+      box-shadow: 0 0 0 3px rgba(91, 75, 255, 0.25);
+    }
+
+    button {
+      justify-self: start;
+      padding: 12px 26px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+      color: #ffffff;
+      font-size: 0.98rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(91, 75, 255, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px rgba(91, 75, 255, 0.42);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: rgba(255, 255, 255, 0.4);
+    }
+
+    @media (max-width: 680px) {
+      body {
+        padding: 32px 16px 48px;
+      }
+
+      .page {
+        border-radius: 22px;
+        padding: 28px 20px;
+      }
+
+      header.hero {
+        margin-bottom: 48px;
+      }
+
+      .meta-card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <span class="tag">Proposta Comercial</span>
+        <h1>n8n em Produção</h1>
+        <p class="lead">Ambiente n8n resiliente, observável e documentado para acelerar automações críticas de marketing, vendas e finanças, sem sacrificar segurança e governança.</p>
+        <div class="pill-strip">
+          <span class="pill">Entrega guiada por runbooks</span>
+          <span class="pill">Observabilidade completa</span>
+          <span class="pill">Suporte consultivo 15h/mês</span>
+        </div>
+      </div>
+      <aside class="meta-grid">
+        <div class="meta-card">
+          <strong>Proponente</strong>
+          <p>Tiago Tadashi Yokoyama ME &mdash; CNPJ 31.228.920/0001-95</p>
+        </div>
+        <div class="meta-card">
+          <strong>Cliente</strong>
+          <p>[Nome da Empresa do Cliente] &mdash; CNPJ [●]</p>
+        </div>
+        <div class="meta-card">
+          <strong>Ponto focal</strong>
+          <p>Nome &bull; Cargo &bull; E-mail &bull; Telefone</p>
+        </div>
+      </aside>
+    </header>
+
+    <main>
+      <section>
+        <div class="section-intro">
+          <h2>Objetivo</h2>
+          <p class="section-lead">Disponibilizar um ambiente n8n pronto para produção com governança de dados, integrações seguras e arquitetura alinhada ao estágio e maturidade da operação.</p>
+        </div>
+        <div class="card-grid three">
+          <article class="card highlight">
+            <h3>Valor imediato</h3>
+            <p>Stack produtivo com filas, banco dedicado, observabilidade integrada e documentação operacional para acelerar entregas desde o primeiro sprint.</p>
+          </article>
+          <article class="card">
+            <h3>Opção A &mdash; Alta Disponibilidade</h3>
+            <p>Quatro servidores, cluster de Redis e múltiplos workers para máxima resiliência e escalabilidade com failover automático.</p>
+          </article>
+          <article class="card">
+            <h3>Opção B &mdash; Produção Essencial</h3>
+            <p>Dois servidores dedicados com opção de Redis gerenciado, ideal para começar com custo otimizado e evolução progressiva.</p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Escopo Comum</h2>
+        <p class="section-lead">Independente da arquitetura escolhida, entregamos um pacote completo para operação sustentada e auditável do n8n.</p>
+        <div class="card-grid two">
+          <article class="card">
+            <h3>Infraestrutura</h3>
+            <ul>
+              <li><strong>Queue mode completo</strong> com serviços independentes de Editor, Webhooks e Workers.</li>
+              <li><strong>PostgreSQL</strong> como base transacional (migração do MySQL incluída, se necessário).</li>
+              <li><strong>Backblaze&nbsp;B2</strong> para armazenar binários e manter o ambiente stateless.</li>
+              <li><strong>Traefik</strong> como proxy reverso combinado a <strong>Cloudflare Tunnel</strong> para exposição segura.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Confiabilidade</h3>
+            <ul>
+              <li>Segurança por padrão com uso de secrets, redes internas e mínima superfície exposta.</li>
+              <li>Backups diários automatizados e testes de restauração documentados.</li>
+              <li>Runbooks e checklists para operação, deploys e incidentes.</li>
+              <li>Testes com fluxos reais para validação de integridade antes da virada.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Observabilidade &amp; BI</h3>
+            <ul>
+              <li><strong>Grafana, Prometheus, Loki/Promtail</strong> com dashboards e alertas base.</li>
+              <li><strong>Sentry</strong> integrado via Error Trigger para captura contextualizada.</li>
+              <li><strong>Metabase</strong> para KPIs e relatórios de negócio.</li>
+              <li>Alertas para infraestrutura (CPU, RAM, disco, filas, latência) e fluxos críticos.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Governança</h3>
+            <ul>
+              <li>Documentação viva do ambiente, credenciais de acesso e matrizes de responsabilidade.</li>
+              <li>Política de versionamento de fluxos e pipeline de testes.</li>
+              <li>Procedimentos de auditoria e checklist de handover.</li>
+            </ul>
+          </article>
+        </div>
+        <p class="note">Serviços de terceiros (Backblaze&nbsp;B2, Sentry, Redis gerenciado etc.) devem ser contratados pelo cliente. O setup e a integração fazem parte da entrega.</p>
+      </section>
+
+      <section>
+        <h2>Observabilidade &amp; Sentry</h2>
+        <p class="section-lead">Visibilidade ponta a ponta para identificar gargalos, monitorar filas e agir com rapidez quando fluxos críticos sofrem degradação.</p>
+        <div class="card-grid two">
+          <article class="card">
+            <h3>Stack de monitoração</h3>
+            <ul>
+              <li><strong>Prometheus</strong> coleta métricas de hosts, containers e serviços, com alertas baseados em limiares definidos.</li>
+              <li><strong>Loki/Promtail</strong> centraliza logs e permite correlações por workflow ou serviço.</li>
+              <li><strong>Grafana</strong> entrega painéis com alertas configuráveis (CPU, RAM, disco, filas paradas, latência).</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Gestão de erros</h3>
+            <ul>
+              <li><strong>Sentry</strong> captura e deduplica exceções com contexto, tags e breadcrumbs.</li>
+              <li>Fluxos do n8n configurados com Error Trigger apontando para o DSN do cliente.</li>
+              <li>Playbook de resposta e classificação por severidade.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Consumo das Horas de Suporte (15h/mês)</h2>
+        <p class="section-lead">Monitoramos, ajustamos e evoluímos o ambiente de forma contínua. Tudo registrado em timesheet compartilhado.</p>
+        <div class="support-grid">
+          <article class="card">
+            <h3>Monitoramento</h3>
+            <ul>
+              <li>Revisão de alertas (Prometheus/Sentry): 20&ndash;40 min.</li>
+              <li>Análises preventivas de métricas/logs: 20&ndash;40 min por análise.</li>
+              <li>Ajustes em dashboards Grafana ou Metabase: 15&ndash;40 min.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Manutenção</h3>
+            <ul>
+              <li>Atualização de containers com estratégia blue/green: 1&ndash;1,5 h.</li>
+              <li>Backup e testes de restauração do banco: 30&ndash;60 min.</li>
+              <li>Limpeza de execuções e otimização de índices: 30&ndash;60 min.</li>
+              <li>Ajustes em Redis, concorrência de workers e webhooks: 20&ndash;40 min.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Solicitações</h3>
+            <ul>
+              <li>Ajuste em fluxo existente (campo/header): 20&ndash;60 min.</li>
+              <li>Novo nó simples em workflow: 30&ndash;60 min.</li>
+              <li>Integração média (nova API com autenticação e testes): 1&ndash;2 h.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Incidentes</h3>
+            <ul>
+              <li><strong>Nível 1</strong> &mdash; baixo impacto: resposta até 2 dias úteis (20&ndash;60 min).</li>
+              <li><strong>Nível 2</strong> &mdash; médio impacto: resposta até 1 dia útil (50&ndash;120 min).</li>
+              <li><strong>Nível 3</strong> &mdash; crítico: resposta em até 4h úteis, com horas extras a R$&nbsp;160/h.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Relatórios</h3>
+            <ul>
+              <li>Criação ou ajuste de KPI (Metabase/Grafana): 30&ndash;90 min.</li>
+              <li>Geração de relatórios mensais e exports: 15&ndash;40 min.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Reuniões</h3>
+            <ul>
+              <li>Alinhamentos, planejamento ou revisão de sprint: 30&ndash;60 min.</li>
+              <li>Post-mortem de incidentes: 30&ndash;60 min.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Opções de Arquitetura</h2>
+        <div class="card-grid two">
+          <article class="card option-card">
+            <span class="badge">Opção A &mdash; Alta Disponibilidade</span>
+            <ul>
+              <li><strong>Servidores:</strong> quatro (três managers + um worker dedicado) com 4 vCPU, 8&ndash;16 GB RAM e 100&ndash;200 GB SSD/NVMe.</li>
+              <li><strong>Redis:</strong> cluster com três nós distribuídos, failover automático.</li>
+              <li><strong>Webhooks/Workers:</strong> múltiplas réplicas (&ge; 2) com escalonamento horizontal.</li>
+              <li><strong>PostgreSQL:</strong> volume dedicado; recomendação de banco gerenciado.</li>
+              <li><strong>Observabilidade &amp; Sentry:</strong> hospedados no worker dedicado.</li>
+              <li><strong>Armazenamento:</strong> Backblaze&nbsp;B2.</li>
+              <li><strong>Benefícios:</strong> resiliência a falhas de nó, menor MTTR, escalabilidade previsível.</li>
+              <li><strong>Trade-offs:</strong> maior investimento e complexidade operacional.</li>
+            </ul>
+          </article>
+          <article class="card option-card">
+            <span class="badge">Opção B &mdash; Produção Essencial</span>
+            <ul>
+              <li><strong>Servidores:</strong> dois (um manager + um worker) com 4 vCPU, 8&ndash;16 GB RAM e 100&ndash;200 GB SSD/NVMe.</li>
+              <li><strong>Redis:</strong> instância única, com recomendação de serviço gerenciado (Upstash/Redis Cloud) para failover básico.</li>
+              <li><strong>Webhooks/Workers:</strong> uma ou duas réplicas conforme tráfego.</li>
+              <li><strong>PostgreSQL:</strong> instância única com backup diário e teste de restauração.</li>
+              <li><strong>Observabilidade &amp; Sentry:</strong> compartilhados com o worker, com retenções ajustadas.</li>
+              <li><strong>Armazenamento:</strong> Backblaze&nbsp;B2.</li>
+              <li><strong>Benefícios:</strong> menor custo, simplicidade e caminho claro para evoluir a HA.</li>
+              <li><strong>Trade-offs:</strong> pontos únicos de falha e janelas de manutenção planejada.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Valores e Condições</h2>
+        <div class="card pricing-card">
+          <ul>
+            <li>
+              <strong>Reconfiguração Produção Essencial (Opção B)</strong>
+              <span class="amount">R$ 1.500,00</span>
+              <p>Pagamento único antecipado (antes do início da configuração).</p>
+            </li>
+            <li>
+              <strong>Reconfiguração Alta Disponibilidade (Opção A)</strong>
+              <span class="amount">R$ 3.200,00</span>
+              <p>Pagamento único antecipado. Inclui orquestração extra, cluster Redis e testes de failover.</p>
+            </li>
+            <li>
+              <strong>Suporte Mensal (opcional)</strong>
+              <span class="amount">R$ 2.250,00</span>
+              <p>Pacote de 15 h/mês. Horas adicionais faturadas a R$ 160/h.</p>
+            </li>
+            <li>
+              <strong>Observabilidade &amp; Metabase</strong>
+              <span class="amount">Incluso</span>
+              <p>Configuração completa sem custo extra. Serviços terceiros são contratados pelo cliente.</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <div class="next-steps">
+          <h2>Próximo Passo</h2>
+          <p>Escolha a arquitetura desejada (Alta Disponibilidade ou Produção Essencial) e indique o ponto focal responsável pelo onboarding. Em seguida, enviaremos o contrato para assinatura e liberaremos o checklist de acessos.</p>
+          <p>Tem dúvidas ou precisa de uma variação personalizada? Agende uma chamada rápida para validarmos necessidades específicas antes do kickoff.</p>
+          <p>Atenciosamente,<br /><strong>Tiago Tadashi Yokoyama</strong> &mdash; Diretor, Vibe Code</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Formulário de Solicitação</h2>
+        <p class="section-lead">Preencha os dados abaixo para formalizar a escolha da arquitetura e compartilhar o contato do responsável.</p>
+        <div class="form-card">
+          <form>
+            <div>
+              <label for="modelo">Modelo de configuração n8n</label>
+              <select id="modelo" name="modelo">
+                <option value="alta">Alta Disponibilidade (Opção A)</option>
+                <option value="essencial">Produção Essencial (Opção B)</option>
+              </select>
+            </div>
+            <div>
+              <label for="empresa">Empresa</label>
+              <input type="text" id="empresa" name="empresa" placeholder="Nome da empresa" />
+            </div>
+            <div>
+              <label for="ponto-focal">Nome do ponto focal</label>
+              <input type="text" id="ponto-focal" name="ponto-focal" placeholder="Nome completo" />
+            </div>
+            <div>
+              <label for="cargo">Cargo</label>
+              <input type="text" id="cargo" name="cargo" placeholder="Cargo ou função" />
+            </div>
+            <div>
+              <label for="email">E-mail</label>
+              <input type="email" id="email" name="email" placeholder="nome@empresa.com" />
+            </div>
+            <div>
+              <label for="telefone">Telefone / WhatsApp</label>
+              <input type="tel" id="telefone" name="telefone" placeholder="(00) 00000-0000" />
+            </div>
+            <div>
+              <label for="observacoes">Observações adicionais</label>
+              <textarea id="observacoes" name="observacoes" placeholder="Requisitos específicos, janelas de implantação, integrações prioritárias..."></textarea>
+            </div>
+            <button type="button">Registrar solicitação</button>
+            <p class="note">Formulário ilustrativo para uso em PDF ou site estático. Configure submissão conforme stack desejada (por exemplo, n8n Webhook, formulário Next.js ou CRM).</p>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

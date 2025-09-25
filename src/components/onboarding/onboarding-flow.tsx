@@ -6,6 +6,7 @@ import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { OnboardingWelcome } from "./onboarding-welcome";
 import { CompanyInfoForm, type CompanyFormData } from "./company-info-form";
+import { WhatsAppSetup } from "./whatsapp-setup";
 import { CategoriesSetup, type CategoriesData } from "./categories-setup";
 import { OnboardingCompletion } from "./onboarding-completion";
 import { Progress } from "@/components/ui/progress";
@@ -13,11 +14,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Building2, Settings, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type OnboardingStep = "welcome" | "company" | "categories" | "completion";
+type OnboardingStep =
+  | "welcome"
+  | "company"
+  | "whatsapp"
+  | "categories"
+  | "completion";
 
 interface OnboardingData {
   selectedFeatures: string[];
   companyInfo: CompanyFormData | null;
+  whatsappNumber: string | null;
   categoriesData: CategoriesData | null;
 }
 
@@ -28,6 +35,7 @@ export function OnboardingFlow() {
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     selectedFeatures: [],
     companyInfo: null,
+    whatsappNumber: null,
     categoriesData: null,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +43,7 @@ export function OnboardingFlow() {
   const steps = [
     { id: "welcome", title: "Boas-vindas", icon: CheckCircle2 },
     { id: "company", title: "Empresa", icon: Building2 },
+    { id: "whatsapp", title: "WhatsApp", icon: Settings },
     { id: "categories", title: "Categorias", icon: Settings },
     { id: "completion", title: "Conclusão", icon: CheckCircle2 },
   ];
@@ -54,6 +63,14 @@ export function OnboardingFlow() {
     setOnboardingData((prev) => ({
       ...prev,
       companyInfo,
+    }));
+    setCurrentStep("whatsapp");
+  };
+
+  const handleWhatsAppNext = (phoneNumber: string) => {
+    setOnboardingData((prev) => ({
+      ...prev,
+      whatsappNumber: phoneNumber,
     }));
     setCurrentStep("categories");
   };
@@ -82,6 +99,7 @@ export function OnboardingFlow() {
         body: JSON.stringify({
           selectedFeatures: onboardingData.selectedFeatures,
           companyInfo: onboardingData.companyInfo,
+          whatsappNumber: onboardingData.whatsappNumber,
           categoriesData: onboardingData.categoriesData,
         }),
       });
@@ -120,8 +138,11 @@ export function OnboardingFlow() {
       case "company":
         setCurrentStep("welcome");
         break;
-      case "categories":
+      case "whatsapp":
         setCurrentStep("company");
+        break;
+      case "categories":
+        setCurrentStep("whatsapp");
         break;
       case "completion":
         setCurrentStep("categories");
@@ -230,6 +251,14 @@ export function OnboardingFlow() {
           />
         )}
 
+        {currentStep === "whatsapp" && (
+          <WhatsAppSetup
+            onNext={handleWhatsAppNext}
+            onBack={handleBack}
+            phoneNumber={onboardingData.companyInfo?.phone}
+          />
+        )}
+
         {currentStep === "categories" && (
           <CategoriesSetup
             onNext={handleCategoriesNext}
@@ -244,6 +273,7 @@ export function OnboardingFlow() {
             userData={{
               userName: session.user.name || "Usuário",
               companyName: onboardingData.companyInfo?.name || "Sua Empresa",
+              whatsappNumber: onboardingData.whatsappNumber,
               selectedFeatures: onboardingData.selectedFeatures,
               categoriesCount:
                 (onboardingData.categoriesData?.selectedCategories.length ||

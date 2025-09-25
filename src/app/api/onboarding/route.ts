@@ -11,6 +11,26 @@ import {
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
+// Função para normalizar número de telefone
+function normalizePhoneNumber(phone: string): string {
+  if (!phone) return "";
+
+  // Remove todos os caracteres não numéricos
+  const numbers = phone.replace(/\D/g, "");
+
+  // Se começar com 55 (código do Brasil), remove
+  if (numbers.startsWith("55") && numbers.length === 13) {
+    return numbers.slice(2);
+  }
+
+  // Se começar com 0, remove
+  if (numbers.startsWith("0")) {
+    return numbers.slice(1);
+  }
+
+  return numbers;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -22,7 +42,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { selectedFeatures, companyInfo, categoriesData } = body;
+    const { selectedFeatures, companyInfo, whatsappNumber, categoriesData } =
+      body;
 
     // Validar dados obrigatórios
     if (!companyInfo || !selectedFeatures || !categoriesData) {
@@ -33,6 +54,11 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id;
+
+    // Normalizar número de telefone
+    const normalizedPhone = normalizePhoneNumber(
+      whatsappNumber || companyInfo.phone
+    );
 
     // Iniciar transação
     await db.transaction(async (tx) => {
@@ -102,6 +128,7 @@ export async function POST(request: NextRequest) {
           userId,
           currency: "BRL",
           timezone: "America/Sao_Paulo",
+          whatsappNumber: normalizedPhone || null,
           preferences: {
             selectedFeatures,
             onboardingCompleted: true,
@@ -110,6 +137,7 @@ export async function POST(request: NextRequest) {
         .onConflictDoUpdate({
           target: userSettings.userId,
           set: {
+            whatsappNumber: normalizedPhone || null,
             preferences: {
               selectedFeatures,
               onboardingCompleted: true,

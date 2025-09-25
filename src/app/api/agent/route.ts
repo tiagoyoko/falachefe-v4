@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { user } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { supervise } from "@/agents/supervisor";
+import { getOrchestrator } from "@/lib/orchestrator/agent-squad";
+import { extractAgentMessage } from "@/lib/orchestrator/response";
 import { llmService } from "@/lib/llm-service";
 
 // POST /api/agent - Processar comando do agente de fluxo de caixa
@@ -31,12 +34,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Processar comando usando LLM
-    const response = await llmService.processUserMessage(userId, command);
+    // Tentar via AgentSquad; fallback para supervisor em caso de erro
+    let response: unknown;
+    try {
+      const orchestrator = getOrchestrator();
+      const sessionId = `${userId}`; // simples por enquanto; pode ser chatId
+      response = await orchestrator.routeRequest(command, userId, sessionId);
+    } catch {
+      response = await supervise({ userId, message: command });
+    }
 
+    const message = await extractAgentMessage(response);
     return NextResponse.json({
-      success: true,
-      data: response,
+      success: Boolean(message),
+      data: message ?? null,
     });
   } catch (error) {
     console.error("Erro ao processar comando do agente:", error);

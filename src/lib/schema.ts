@@ -4,6 +4,7 @@ import {
   timestamp,
   boolean,
   decimal,
+  integer,
   json,
 } from "drizzle-orm/pg-core";
 
@@ -13,6 +14,8 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified"),
   image: text("image"),
+  role: text("role").notNull().default("user"), // 'user' | 'admin' | 'super_admin'
+  isActive: boolean("isActive").notNull().default(true),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
@@ -113,8 +116,7 @@ export const userSettings = pgTable("userSettings", {
   id: text("id").primaryKey(),
   userId: text("userId")
     .notNull()
-    .references(() => user.id, { onDelete: "cascade" })
-    .unique(),
+    .references(() => user.id, { onDelete: "cascade" }),
   currency: text("currency").notNull().default("BRL"),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   whatsappNumber: text("whatsappNumber"),
@@ -143,8 +145,7 @@ export const companies = pgTable("companies", {
   id: text("id").primaryKey(),
   userId: text("userId")
     .notNull()
-    .references(() => user.id, { onDelete: "cascade" })
-    .unique(),
+    .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   segment: text("segment"), // Segmento de atuação (varejo, serviços, etc.)
   cnpj: text("cnpj"),
@@ -166,8 +167,7 @@ export const onboardingPreferences = pgTable("onboardingPreferences", {
   id: text("id").primaryKey(),
   userId: text("userId")
     .notNull()
-    .references(() => user.id, { onDelete: "cascade" })
-    .unique(),
+    .references(() => user.id, { onDelete: "cascade" }),
   mainGoals: json("mainGoals"), // Objetivos principais (array de strings)
   painPoints: json("painPoints"), // Principais dores (array de strings)
   currentTools: json("currentTools"), // Ferramentas que usa atualmente
@@ -223,5 +223,133 @@ export const whatsappMessages = pgTable("whatsappMessages", {
   mediaUrl: text("mediaUrl"),
   providerMessageId: text("providerMessageId"),
   raw: json("raw"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+// ===== MEMÓRIA DE CONVERSA (PERSISTENTE) =====
+
+export const conversationSessions = pgTable("conversationSessions", {
+  id: text("id").primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  agent: text("agent").notNull(), // 'financeiro' | 'max' | 'geral'
+  title: text("title"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const conversationMessages = pgTable("conversationMessages", {
+  id: text("id").primaryKey(),
+  sessionId: text("sessionId")
+    .notNull()
+    .references(() => conversationSessions.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // 'user' | 'assistant'
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export const conversationSummaries = pgTable("conversationSummaries", {
+  id: text("id").primaryKey(),
+  sessionId: text("sessionId")
+    .notNull()
+    .references(() => conversationSessions.id, { onDelete: "cascade" })
+    .unique(),
+  summary: text("summary").notNull(),
+  lastMessageAt: timestamp("lastMessageAt").notNull().defaultNow(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+// ===== PERFIS DE AGENTES =====
+
+export const agentProfiles = pgTable("agentProfiles", {
+  id: text("id").primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  agent: text("agent").notNull(), // 'financeiro' | 'max' | 'geral'
+  settings: json("settings"), // preferências, persona, canais, objetivos
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+// ===== AGENTES DINÂMICOS (ADMIN) =====
+
+export const agents = pgTable("agents", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(), // 'leo', 'max', 'lia', etc.
+  displayName: text("displayName").notNull(), // 'Leo - Agente Financeiro'
+  description: text("description").notNull(),
+  tone: text("tone").notNull(), // Descrição do tom de voz
+  persona: json("persona").notNull(), // { displayName, description, tone }
+  capabilities: json("capabilities"), // Array de capacidades
+  isActive: boolean("isActive").notNull().default(true),
+  isSystem: boolean("isSystem").notNull().default(false), // Agentes do sistema não podem ser deletados
+  createdBy: text("createdBy")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const agentSettings = pgTable("agentSettings", {
+  id: text("id").primaryKey(),
+  agentId: text("agentId")
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  settings: json("settings").notNull(), // Configurações personalizadas do usuário
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+// ===== RAG (FONTES, DOCUMENTOS, CHUNKS, EMBEDDINGS) =====
+
+export const ragSources = pgTable("ragSources", {
+  id: text("id").primaryKey(),
+  userId: text("userId").references(() => user.id, { onDelete: "set null" }),
+  kind: text("kind").notNull(), // 'url' | 'file' | 'manual'
+  label: text("label").notNull(),
+  url: text("url"),
+  tags: json("tags"), // string[]
+  isActive: boolean("isActive").notNull().default(true),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const ragDocuments = pgTable("ragDocuments", {
+  id: text("id").primaryKey(),
+  sourceId: text("sourceId").references(() => ragSources.id, {
+    onDelete: "set null",
+  }),
+  title: text("title").notNull(),
+  url: text("url"),
+  lang: text("lang"),
+  tags: json("tags"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export const ragChunks = pgTable("ragChunks", {
+  id: text("id").primaryKey(),
+  documentId: text("documentId")
+    .notNull()
+    .references(() => ragDocuments.id, { onDelete: "cascade" }),
+  idx: integer("idx").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export const ragEmbeddings = pgTable("ragEmbeddings", {
+  id: text("id").primaryKey(),
+  chunkId: text("chunkId")
+    .notNull()
+    .references(() => ragChunks.id, { onDelete: "cascade" }),
+  embedding: json("embedding").notNull(), // number[]
+  model: text("model").notNull(),
+  dims: integer("dims").notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });

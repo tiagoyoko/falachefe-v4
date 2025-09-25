@@ -8,6 +8,7 @@ import { categorizationService } from "./categorization-service";
 import { dateParser } from "./date-parser";
 import { contextService } from "./context-service";
 import { llmExtractionService } from "./llm-extraction-service";
+import { persistentMemoryService } from "./persistent-memory-service";
 
 export interface LLMResponse {
   success: boolean;
@@ -36,6 +37,11 @@ export interface UserContext {
     type: string;
   }>;
   totalBalance?: number;
+  conversationHistory?: Array<{
+    role: "user" | "assistant";
+    content: string;
+    timestamp: Date;
+  }>;
 }
 
 export class LLMService {
@@ -44,17 +50,35 @@ export class LLMService {
   async processUserMessage(
     userId: string,
     message: string,
-    saveToHistory: boolean = true
+    saveToHistory: boolean = true,
+    agent: string = "geral"
   ): Promise<LLMResponse> {
     try {
       // Limpar contextos expirados periodicamente
       contextService.cleanupExpiredContexts();
+
+      // Obter ou criar sessão de conversa persistente
+      const sessionId = await persistentMemoryService.getOrCreateSession(
+        userId,
+        agent
+      );
+
+      // Salvar mensagem do usuário
+      await persistentMemoryService.saveMessage(sessionId, "user", message);
+
       // Verificar se é uma resposta a uma transação pendente usando LLM
       const isResponseToTransaction =
         await contextService.isResponseToPendingTransaction(userId, message);
 
       if (isResponseToTransaction) {
-        return this.handleTransactionResponse(userId, message);
+        const response = await this.handleTransactionResponse(userId, message);
+        // Salvar resposta do assistente
+        await persistentMemoryService.saveMessage(
+          sessionId,
+          "assistant",
+          response.message
+        );
+        return response;
       }
 
       // Detectar comando de transação usando LLM
@@ -62,11 +86,21 @@ export class LLMService {
 
       if (transactionCommand) {
         const userContext = await this.getUserContext(userId);
-        return this.handleTransactionCommand(userContext, transactionCommand);
+        const response = await this.handleTransactionCommand(
+          userContext,
+          transactionCommand
+        );
+        // Salvar resposta do assistente
+        await persistentMemoryService.saveMessage(
+          sessionId,
+          "assistant",
+          response.message
+        );
+        return response;
       }
 
-      // Buscar contexto do usuário
-      const userContext = await this.getUserContext(userId);
+      // Buscar contexto do usuário com memória persistente
+      const userContext = await this.getUserContextWithMemory(userId, agent);
 
       // Processar mensagem com LLM
       const response = await this.generateResponse(userContext, message);
@@ -75,6 +109,13 @@ export class LLMService {
       if (saveToHistory) {
         await this.saveToHistory(userId, message, response);
       }
+
+      // Salvar resposta do assistente na memória persistente
+      await persistentMemoryService.saveMessage(
+        sessionId,
+        "assistant",
+        response.message
+      );
 
       // Sempre atualizar contexto de conversa para manter memória
       contextService.createOrUpdateConversationContext(
@@ -97,6 +138,31 @@ export class LLMService {
         },
       };
     }
+  }
+
+  private async getUserContextWithMemory(
+    userId: string,
+    agent: string
+  ): Promise<UserContext> {
+    // Obter contexto básico do usuário
+    const basicContext = await this.getUserContext(userId);
+
+    // Obter histórico de conversa persistente
+    const conversationHistory = await persistentMemoryService.getRecentHistory(
+      userId,
+      agent,
+      5 // Últimas 5 mensagens
+    );
+
+    // Adicionar histórico ao contexto
+    return {
+      ...basicContext,
+      conversationHistory: conversationHistory.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+      })),
+    };
   }
 
   private async getUserContext(userId: string): Promise<UserContext> {
@@ -199,11 +265,10 @@ export class LLMService {
       return this.handleCategorizationCommand(context, categorizationCommand);
     }
 
-    // Obter histórico de conversa recente
-    const recentHistory = contextService.getRecentConversationHistory(
-      context.userId,
-      5
-    );
+    // Obter histórico de conversa recente (usar persistente se disponível)
+    const recentHistory =
+      context.conversationHistory ||
+      contextService.getRecentConversationHistory(context.userId, 5);
 
     const systemPrompt = `Você é o "Fala Chefe!", um assistente de IA especializado em gestão financeira para pequenos empresários brasileiros.
 
@@ -222,12 +287,15 @@ HISTÓRICO DA CONVERSA RECENTE:
 ${
   recentHistory.length > 0
     ? recentHistory
-        .map(
-          (h, i) =>
-            `${i + 1}. Usuário: "${h.userMessage}"\n   Assistente: "${
-              h.systemResponse
-            }"`
-        )
+        .map((h, i) => {
+          if ("userMessage" in h) {
+            // Formato antigo (contextService)
+            return `${i + 1}. Usuário: "${h.userMessage}"\n   Assistente: "${h.systemResponse}"`;
+          } else {
+            // Formato novo (persistentMemoryService)
+            return `${i + 1}. ${h.role === "user" ? "Usuário" : "Assistente"}: "${h.content}"`;
+          }
+        })
         .join("\n")
     : "Nenhuma conversa anterior encontrada."
 }
@@ -296,9 +364,8 @@ ${
     date?: string;
   } | null> {
     try {
-      const extraction = await llmExtractionService.extractTransactionData(
-        message
-      );
+      const extraction =
+        await llmExtractionService.extractTransactionData(message);
 
       if (!extraction.isTransaction || extraction.confidence < 0.7) {
         return null;

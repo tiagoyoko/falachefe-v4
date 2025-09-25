@@ -27,6 +27,7 @@ interface OnboardingCompletionProps {
   userData: {
     userName: string;
     companyName: string;
+    whatsappNumber?: string | null;
     selectedFeatures: string[];
     categoriesCount: number;
   };
@@ -191,6 +192,17 @@ export function OnboardingCompletion({
               </span>
               <Badge variant="secondary">{userData.categoriesCount}</Badge>
             </div>
+
+            {userData.whatsappNumber && (
+              <div className="flex items-center justify-between pt-2 border-t">
+                <span className="text-sm text-muted-foreground">
+                  WhatsApp configurado:
+                </span>
+                <Badge variant="outline" className="text-green-600">
+                  {userData.whatsappNumber}
+                </Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
 

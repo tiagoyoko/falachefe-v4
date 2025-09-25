@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { userSettings, whatsappMessages } from "@/lib/schema";
-import { eq } from "drizzle-orm";
-import { llmService } from "@/lib/llm-service";
+import { inArray } from "drizzle-orm";
+import { supervise } from "@/agents/supervisor";
+import { getOrchestrator } from "@/lib/orchestrator/agent-squad";
 import { getUazapiService } from "@/lib/uazapi-service";
+import { extractAgentMessage } from "@/lib/orchestrator/response";
 import { nanoid } from "nanoid";
 
 // Handler genérico para eventos da Uazapi (messages, messages_update, connection, etc.)
@@ -36,6 +38,10 @@ export async function POST(request: NextRequest) {
       const instance = instanceId || data?.instance || data?.instance_id || "";
 
       const numberOnly = (rawFrom.match(/\d+/g) || []).join("");
+      const last11 =
+        numberOnly.length >= 11 ? numberOnly.slice(-11) : numberOnly;
+      const altNoDDI = numberOnly.replace(/^55/, "");
+      const candidates = Array.from(new Set([numberOnly, last11, altNoDDI]));
       const chatId =
         rawChatId || (numberOnly ? `${numberOnly}@s.whatsapp.net` : "");
 
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
           const settings = await db
             .select({ userId: userSettings.userId })
             .from(userSettings)
-            .where(eq(userSettings.whatsappNumber, numberOnly))
+            .where(inArray(userSettings.whatsappNumber, candidates))
             .limit(1);
 
           const userId = settings[0]?.userId || null;
@@ -82,12 +88,24 @@ export async function POST(request: NextRequest) {
               });
             } catch {}
 
-            const response = await llmService.processUserMessage(userId, text);
-            if (response?.message) {
+            let response: unknown;
+            try {
+              const orchestrator = getOrchestrator();
+              const sessionId = `${userId}-${chatId || numberOnly}`;
+              response = await orchestrator.routeRequest(
+                text,
+                userId,
+                sessionId
+              );
+            } catch {
+              response = await supervise({ userId, message: text });
+            }
+            const messageText = await extractAgentMessage(response);
+            if (messageText) {
               // Enviar resposta e persistir (outbound)
               const sendRes = await getUazapiService().sendText({
                 number: numberOnly,
-                text: response.message,
+                text: messageText,
                 readchat: true,
               });
 
@@ -101,7 +119,7 @@ export async function POST(request: NextRequest) {
                   sender: "system",
                   receiver: numberOnly,
                   messageType: "text",
-                  messageText: response.message,
+                  messageText,
                   providerMessageId:
                     typeof sendRes.data === "object" &&
                     sendRes.data !== null &&

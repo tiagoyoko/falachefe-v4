@@ -314,17 +314,6 @@ export function CompanyInfoForm({
               </div>
             </div>
 
-            {/* Telefone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone/WhatsApp</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => updateFormData("phone", e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-
             {/* Descrição */}
             <div className="space-y-2">
               <Label htmlFor="description">
