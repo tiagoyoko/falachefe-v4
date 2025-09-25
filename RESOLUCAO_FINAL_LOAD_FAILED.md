@@ -10,11 +10,13 @@
 ## 🔍 **Problema Identificado:**
 
 ### ❌ **Sintomas:**
+
 - Erro "Load failed" ao tentar criar conta
 - Console: "Supabase environment variables not configured. Using fallback values."
 - Network: `POST https://placeholder.supabase.co/auth/v1/signup net::ERR_NAME_NOT_RESOLVED`
 
 ### 🔍 **Causa Raiz:**
+
 As variáveis de ambiente `falachefe_NEXT_PUBLIC_*` **não estavam sendo expostas para o cliente** (browser). No Next.js, apenas variáveis que começam com `NEXT_PUBLIC_` são acessíveis no lado do cliente.
 
 ---
@@ -22,33 +24,43 @@ As variáveis de ambiente `falachefe_NEXT_PUBLIC_*` **não estavam sendo exposta
 ## 🔧 **Soluções Implementadas:**
 
 ### 1. **Correção do Cliente Supabase**
+
 **Arquivo:** `src/lib/supabase-client.ts`
 
 **Antes:**
+
 ```typescript
-const supabaseUrl = process.env.falachefe_NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseUrl =
+  process.env.falachefe_NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
 ```
 
 **Depois:**
+
 ```typescript
 // No cliente, usar apenas variáveis NEXT_PUBLIC_ que são expostas pelo Vercel
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 ```
 
 ### 2. **Configuração no Vercel Dashboard**
+
 **Variáveis configuradas:**
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://zpdartuyaergbxmbmtur.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Configuração:**
+
 - ✅ Production
-- ✅ Preview  
+- ✅ Preview
 - ✅ Development
 
 ### 3. **Documentação Atualizada**
+
 **Arquivo:** `VERCEL_ENV_SETUP.md`
+
 - Adicionados valores corretos das variáveis
 - Explicação sobre variáveis `NEXT_PUBLIC_`
 - Instruções claras para configuração
@@ -59,14 +71,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### ✅ **Antes vs Depois:**
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| **Variáveis** | `falachefe_NEXT_PUBLIC_*` (não expostas) | `NEXT_PUBLIC_*` (expostas) |
-| **Cliente** | Usando `placeholder.supabase.co` | Conectando ao Supabase real |
-| **Criação de conta** | "Load failed" | ✅ Funcionando |
-| **Página signup** | Carregando com fallbacks | ✅ Carregando normalmente |
+| Aspecto              | Antes                                    | Depois                      |
+| -------------------- | ---------------------------------------- | --------------------------- |
+| **Variáveis**        | `falachefe_NEXT_PUBLIC_*` (não expostas) | `NEXT_PUBLIC_*` (expostas)  |
+| **Cliente**          | Usando `placeholder.supabase.co`         | Conectando ao Supabase real |
+| **Criação de conta** | "Load failed"                            | ✅ Funcionando              |
+| **Página signup**    | Carregando com fallbacks                 | ✅ Carregando normalmente   |
 
 ### ✅ **Confirmações:**
+
 - ✅ Página de signup carregando: `https://falachefe-v4.vercel.app/auth/signup`
 - ✅ Variáveis `NEXT_PUBLIC_*` reconhecidas pelo cliente
 - ✅ Supabase conectando corretamente

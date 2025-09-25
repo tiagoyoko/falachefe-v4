@@ -30,7 +30,22 @@ POSTGRES_URL_NON_POOLING=[sua_url_do_postgres_supabase_non_pooling]
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://mkkddckekpfvpszdtmkm.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ra2RkY2tla3BmdnBzemR0bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1ODI4MzIsImV4cCI6MjA3MjE1ODgzMn0.CGPDa50FPiCUaa3FTU55bZZD3ywwZ2NefyfEg-bhZfM
-SUPABASE_SERVICE_ROLE_KEY=[sua_chave_de_servico_do_supabase]
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ra2RkY2tla3BmdnBzemR0bWttIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjU4MjgzMiwiZXhwIjoyMDcyMTU4ODMyfQ.05SzThBmHcma1lBKG3ttXXHtbtBC-lEh_RN3_P88jcc
+```
+
+#### 🗄️ Database
+
+```
+POSTGRES_URL=postgres://postgres.mkkddckekpfvpszdtmkm:7y5pnrBJYk6cjCp@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require
+POSTGRES_URL_NON_POOLING=postgres://postgres:7y5pnrBJYk6cjCp@db.mkkddckekpfvpszdtmkm.supabase.co:5432/postgres?sslmode=require
+```
+
+#### 🤖 OpenAI
+
+```
+OPENAI_API_KEY=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=
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large
 ```
 
 ### ⚠️ **IMPORTANTE:**
