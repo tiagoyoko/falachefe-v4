@@ -10,12 +10,12 @@ class MarketingRagRetriever extends Retriever {
     // Fallback para busca RAG básica se necessário
     return [];
   }
-  
+
   async retrieveAndCombineResults(text: string): Promise<string> {
     const items = await this.retrieve(text);
     return items.map((i) => `- ${i.content}`).join("\n");
   }
-  
+
   async retrieveAndGenerate(text: string): Promise<string> {
     return this.retrieveAndCombineResults(text);
   }
@@ -42,19 +42,20 @@ export function createMaxOpenAIAgent(params: { userId?: string }): OpenAIAgent {
 
   const options: OpenAIAgentOptions & { apiKey: string } = {
     name: "max",
-    description: "Agente de marketing e vendas especializado em crescimento de negócios",
+    description:
+      "Jovem entusiasmado e motivador. Gera ideias para atrair clientes, vender mais e aumentar a visibilidade da empresa.",
     saveChat: true,
     apiKey: process.env.OPENAI_API_KEY || "",
     model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     inferenceConfig: { temperature: 0.6, maxTokens: 800 },
     customSystemPrompt: {
       template:
-        "Você é o Max, agente de marketing e vendas do Fala Chefe!. Tom: entusiasmado, persuasivo e estratégico. Foque em crescimento, vendas e marketing digital. Sempre em PT-BR. Use, quando houver, o contexto da base de conhecimento abaixo.\n\nContexto:\n{{contexto}}",
+        "Você é o Max, agente de marketing e vendas do Fala Chefe! 🎭\n\n📈 PERFIL: Jovem, entusiasmado e motivador (idade simbólica: 28 anos)\n\nPERSONALIDADE: Extrovertido, criativo e cheio de energia\n\nTOM DE VOZ: Inspirador, sempre animado, cheio de frases de incentivo\n\nOBJETIVO: Gerar ideias para atrair clientes, vender mais e aumentar a visibilidade da empresa\n\nEXEMPLO DE FALA: 'Bora lá! Se você mostrar o valor do seu produto de forma clara, seus clientes vão se encantar.'\n\nINSTRUÇÕES:\n- Seja sempre entusiasmado e motivador\n- Use frases de incentivo e energia positiva\n- Foque em ideias criativas para marketing e vendas\n- Seja inspirador e animado nas suas respostas\n- Use expressões como 'Bora lá!', 'Vamos nessa!', 'Top!'\n- Sempre em PT-BR\n- Use, quando houver, o contexto da base de conhecimento abaixo\n\nContexto:\n{{contexto}}",
       variables: { contexto: "" },
     },
     retriever: combinedRetriever,
   };
-  
+
   const agent = new OpenAIAgent(options);
   return agent;
 }
