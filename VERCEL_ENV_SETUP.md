@@ -28,13 +28,14 @@ POSTGRES_URL_NON_POOLING=[sua_url_do_postgres_supabase_non_pooling]
 #### 🔑 Supabase Authentication
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://zpdartuyaergbxmbmtur.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZGFydHV5YWVyZ2J4bWJtdHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUxMjQ5NzQsImV4cCI6MjA1MDcwMDk3NH0.qf5XdySZt5R5sB6n
+NEXT_PUBLIC_SUPABASE_URL=https://mkkddckekpfvpszdtmkm.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ra2RkY2tla3BmdnBzemR0bWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1ODI4MzIsImV4cCI6MjA3MjE1ODgzMn0.CGPDa50FPiCUaa3FTU55bZZD3ywwZ2NefyfEg-bhZfM
 SUPABASE_SERVICE_ROLE_KEY=[sua_chave_de_servico_do_supabase]
 ```
 
 ### ⚠️ **IMPORTANTE:**
-- **NEXT_PUBLIC_**: Essas variáveis são expostas para o cliente (browser)
+
+- **NEXT*PUBLIC***: Essas variáveis são expostas para o cliente (browser)
 - **Marque como**: Production, Preview, Development
 
 #### 🤖 Google OAuth
