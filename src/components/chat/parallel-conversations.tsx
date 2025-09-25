@@ -43,15 +43,18 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
     onError: (error) => console.error("Erro:", error),
   });
 
-  const loadMessages = useCallback(async (sessionId: string) => {
-    const history = await getConversationHistory(sessionId);
-    if (history) {
-      setMessages((prev) => ({
-        ...prev,
-        [sessionId]: history,
-      }));
-    }
-  }, [getConversationHistory]);
+  const loadMessages = useCallback(
+    async (sessionId: string) => {
+      const history = await getConversationHistory(sessionId);
+      if (history) {
+        setMessages((prev) => ({
+          ...prev,
+          [sessionId]: history,
+        }));
+      }
+    },
+    [getConversationHistory]
+  );
 
   const loadConversations = useCallback(async () => {
     const userConversations = await getUserConversations();
@@ -299,12 +302,11 @@ export function ParallelConversations({ userId }: ParallelConversationsProps) {
                               {getAgentName(message.agentId)}
                             </div>
                           )}
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            className="prose prose-sm max-w-none"
-                          >
-                            {message.content}
-                          </ReactMarkdown>
+                          <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       </div>
                     ))}

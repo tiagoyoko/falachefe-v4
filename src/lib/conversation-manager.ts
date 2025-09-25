@@ -1,4 +1,5 @@
 import { getOrchestrator } from "./orchestrator/agent-squad";
+import { extractAgentMessage } from "./orchestrator/response";
 import { db } from "./db";
 import { conversationSessions, conversationMessages } from "./schema";
 import { eq, desc } from "drizzle-orm";
@@ -110,13 +111,16 @@ export class ConversationManager {
       sessionId
     );
 
+    // Extrair mensagem da resposta
+    const messageContent = await extractAgentMessage(response);
+
     // Salvar resposta do agente
     const agentMessage: ConversationMessage = {
       id: nanoid(),
       sessionId,
       agentId,
       role: "assistant",
-      content: response.message || "Resposta não disponível",
+      content: messageContent || "Resposta não disponível",
       timestamp: new Date(),
     };
 
@@ -158,12 +162,15 @@ export class ConversationManager {
           sessionId
         );
 
+        // Extrair mensagem da resposta
+        const messageContent = await extractAgentMessage(response);
+
         const agentMessage: ConversationMessage = {
           id: nanoid(),
           sessionId,
           agentId,
           role: "assistant",
-          content: response.message || "Resposta não disponível",
+          content: messageContent || "Resposta não disponível",
           timestamp: new Date(),
         };
 

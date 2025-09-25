@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [status, setStatus] = useState<
     "loading" | "success" | "error" | "expired"
   >("loading");
@@ -180,5 +180,35 @@ export default function VerifyEmailPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full space-y-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900">🚀 FalaChefe</h1>
+              <p className="mt-2 text-sm text-gray-600">Carregando...</p>
+            </div>
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+                <CardTitle className="text-xl">Carregando...</CardTitle>
+                <CardDescription>
+                  Aguarde enquanto carregamos a página...
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

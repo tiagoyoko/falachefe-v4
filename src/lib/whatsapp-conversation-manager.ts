@@ -6,6 +6,32 @@ import { getOrchestrator } from "./orchestrator/agent-squad";
 import { extractAgentMessage } from "./orchestrator/response";
 import { nanoid } from "nanoid";
 
+export interface UazapiWebhookData {
+  messageid?: string;
+  id?: string;
+  chatid?: string;
+  fromMe?: boolean;
+  wasSentByApi?: boolean;
+  isGroup?: boolean;
+  isGroupMessage?: boolean;
+  messageType?: string;
+  type?: string;
+  text?: string;
+  body?: string;
+  message?: {
+    text?: string;
+  };
+  caption?: string;
+  messageTimestamp?: number;
+  timestamp?: number;
+  sender?: string;
+  from?: string;
+  author?: string;
+  participant?: string;
+  receiver?: string;
+  to?: string;
+}
+
 export interface WhatsAppMessage {
   id: string;
   messageid: string;
@@ -43,7 +69,9 @@ export class WhatsAppConversationManager {
   /**
    * Processa uma mensagem recebida do webhook da UAZAPI
    */
-  async processIncomingMessage(webhookData: Record<string, unknown>): Promise<void> {
+  async processIncomingMessage(
+    webhookData: Record<string, unknown>
+  ): Promise<void> {
     try {
       console.log("[WhatsApp] Processando mensagem recebida:", webhookData);
 
@@ -95,11 +123,15 @@ export class WhatsAppConversationManager {
   /**
    * Extrai dados da mensagem do webhook da UAZAPI
    */
-  private extractMessageData(webhookData: Record<string, unknown>): WhatsAppMessage | null {
+  private extractMessageData(
+    webhookData: Record<string, unknown>
+  ): WhatsAppMessage | null {
     try {
       const event = webhookData.event || webhookData.type;
-      const instanceId = webhookData.instance || webhookData.instance_id || "";
-      const data = webhookData.data || webhookData;
+      const instanceId = String(
+        webhookData.instance || webhookData.instance_id || ""
+      );
+      const data = (webhookData.data || webhookData) as UazapiWebhookData;
 
       if (event !== "message" && event !== "messages") {
         return null;
@@ -130,8 +162,8 @@ export class WhatsAppConversationManager {
         messageTimestamp,
         sender,
         receiver,
-        instanceId,
-        raw: data,
+        instanceId: instanceId || "default",
+        raw: data as Record<string, unknown>,
       };
     } catch (error) {
       console.error("[WhatsApp] Erro ao extrair dados da mensagem:", error);
@@ -144,21 +176,33 @@ export class WhatsAppConversationManager {
    */
   private async saveIncomingMessage(message: WhatsAppMessage): Promise<void> {
     try {
-      await db.insert(whatsappMessages).values({
+      const insertData = {
         id: message.id,
-        direction: "in",
-        userId: null, // Será preenchido quando encontrar o usuário
+        direction: "in" as const,
+        userId: null,
         instanceId: message.instanceId,
         chatId: message.chatid,
         sender: message.sender,
-        receiver: message.receiver,
+        receiver: message.receiver || null,
         messageType: message.messageType,
         messageText: message.messageText,
-        mediaType: message.raw.mediaType || message.raw.mimetype || null,
-        mediaUrl: message.raw.file || message.raw.url || null,
+        mediaType:
+          typeof message.raw.mediaType === "string"
+            ? message.raw.mediaType
+            : typeof message.raw.mimetype === "string"
+              ? message.raw.mimetype
+              : null,
+        mediaUrl:
+          typeof message.raw.file === "string"
+            ? message.raw.file
+            : typeof message.raw.url === "string"
+              ? message.raw.url
+              : null,
         providerMessageId: message.messageid,
         raw: message.raw,
-      });
+      };
+
+      await db.insert(whatsappMessages).values(insertData);
     } catch (error) {
       console.error("[WhatsApp] Erro ao salvar mensagem recebida:", error);
     }
@@ -182,19 +226,14 @@ export class WhatsAppConversationManager {
         .select({
           userId: userSettings.userId,
           whatsappNumber: userSettings.whatsappNumber,
-          name: userSettings.name,
-          isActive: userSettings.isActive,
         })
         .from(userSettings)
         .where(
-          and(
-            eq(userSettings.isActive, true),
-            // Buscar por diferentes formatos do número
-            or(
-              eq(userSettings.whatsappNumber, numberOnly),
-              eq(userSettings.whatsappNumber, last11),
-              eq(userSettings.whatsappNumber, altNoDDI)
-            )
+          // Buscar por diferentes formatos do número
+          or(
+            eq(userSettings.whatsappNumber, numberOnly),
+            eq(userSettings.whatsappNumber, last11),
+            eq(userSettings.whatsappNumber, altNoDDI)
           )
         )
         .limit(1);
@@ -205,9 +244,9 @@ export class WhatsAppConversationManager {
 
       return {
         userId: settings[0].userId,
-        whatsappNumber: settings[0].whatsappNumber,
-        name: settings[0].name || undefined,
-        isActive: settings[0].isActive,
+        whatsappNumber: settings[0].whatsappNumber || "",
+        name: undefined,
+        isActive: true,
       };
     } catch (error) {
       console.error("[WhatsApp] Erro ao buscar usuário:", error);
@@ -282,20 +321,20 @@ Obrigado! 🚀`;
       const orchestrator = getOrchestrator();
       const sessionId = `${user.userId}-whatsapp-${message.sender}`;
 
-      const response = await orchestrator.routeRequest({
-        message: message.messageText,
-        userId: user.userId,
-        sessionId: sessionId,
-      });
+      const response = await orchestrator.routeRequest(
+        message.messageText || "",
+        user.userId,
+        sessionId
+      );
 
       // Extrair mensagem da resposta
       const agentMessage = await extractAgentMessage(response);
 
-      if (agentMessage && agentMessage.message) {
+      if (agentMessage) {
         // Enviar resposta
         await this.sendResponse(
           message.sender,
-          agentMessage.message,
+          agentMessage,
           message.instanceId,
           message.messageid
         );
@@ -303,7 +342,7 @@ Obrigado! 🚀`;
         // Salvar mensagem enviada
         await this.saveOutgoingMessage(
           message.sender,
-          agentMessage.message,
+          agentMessage,
           message.instanceId,
           user.userId,
           message.messageid
@@ -329,7 +368,7 @@ Obrigado! 🚀`;
    */
   private async sendTypingIndicator(
     sender: string,
-    instanceId: string
+    _instanceId: string
   ): Promise<void> {
     try {
       const uazapiService = getUazapiService();
@@ -384,7 +423,7 @@ Tente novamente em alguns instantes ou entre em contato com nosso suporte.
 
 Obrigado pela compreensão! 🙏`;
 
-      await this.sendResponse(sender, errorText, instanceId);
+      await this.sendResponse(sender, errorText, _instanceId);
     } catch (error) {
       console.error("[WhatsApp] Erro ao enviar mensagem de erro:", error);
     }

@@ -2,6 +2,7 @@ import { AgentSquad } from "agent-squad";
 import { OpenAIClassifier } from "agent-squad";
 
 import { DrizzleChatStorage } from "./drizzle-storage";
+import { extractAgentMessage } from "./response";
 import { createLeoOpenAIAgent } from "@/agents/squad/leo-openai-agent";
 import { createMaxOpenAIAgent } from "@/agents/squad/max-openai-agent";
 import { createLiaOpenAIAgent } from "@/agents/squad/lia-openai-agent";
@@ -51,21 +52,16 @@ export async function processMessageWithSpecificAgent(
   agentName: "leo" | "max" | "lia"
 ) {
   const orchestrator = getOrchestrator();
-  
-  // Buscar o agente específico
-  const agents = orchestrator.getAgents();
-  const specificAgent = agents.find(agent => agent.name === agentName);
-  
-  if (!specificAgent) {
-    throw new Error(`Agente ${agentName} não encontrado`);
-  }
-  
-  // Processar mensagem diretamente com o agente específico
-  const response = await specificAgent.processRequest(message, userId);
-  
+
+  // Usar o orquestrador para processar a mensagem
+  const response = await orchestrator.routeRequest(message, userId, sessionId);
+
+  // Extrair mensagem da resposta
+  const messageContent = await extractAgentMessage(response);
+
   return {
-    message: response.content?.[0]?.text || "Resposta não disponível",
+    message: messageContent || "Resposta não disponível",
     agentName: agentName,
-    success: true
+    success: true,
   };
 }
