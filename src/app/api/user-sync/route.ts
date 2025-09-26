@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
         const { createClient } = await import("@supabase/supabase-js");
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        
+
         if (!supabaseUrl || !supabaseServiceKey) {
           throw new Error("Variáveis de ambiente do Supabase não configuradas");
         }
-        
+
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         const { data: authUsers, error: authError } =
           await supabase.auth.admin.listUsers();

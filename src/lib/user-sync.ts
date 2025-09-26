@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase-server";
 import { db } from "@/lib/db";
 import { user } from "@/lib/schema";
 import { eq } from "drizzle-orm";
@@ -6,14 +5,14 @@ import { eq } from "drizzle-orm";
 // Função para obter cliente Supabase com service role key
 async function getSupabaseClient() {
   const { createClient } = await import("@supabase/supabase-js");
-  
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
+
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error("Variáveis de ambiente do Supabase não configuradas");
   }
-  
+
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
@@ -37,7 +36,7 @@ interface DbUser {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  emailVerified?: boolean;
+  emailVerified?: boolean | null;
   image?: string | null;
 }
 
