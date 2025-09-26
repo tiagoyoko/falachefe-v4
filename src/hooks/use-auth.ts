@@ -59,13 +59,26 @@ export function useAuth() {
   };
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    return { data, error };
+    try {
+      console.log("Iniciando login com Google...");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
+        },
+      });
+      
+      if (error) {
+        console.error("Erro no OAuth:", error);
+        return { data: null, error };
+      }
+      
+      console.log("OAuth iniciado com sucesso:", data.url);
+      return { data, error: null };
+    } catch (error) {
+      console.error("Erro inesperado no OAuth:", error);
+      return { data: null, error };
+    }
   };
 
   return {

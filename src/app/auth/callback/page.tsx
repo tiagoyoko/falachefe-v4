@@ -23,15 +23,31 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-
+        // Verificar se há parâmetros de erro na URL primeiro
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+        
         if (error) {
+          console.error("Erro OAuth na URL:", error, errorDescription);
           setStatus("error");
-          setMessage("Erro ao processar autenticação: " + error.message);
+          setMessage(`Erro de autenticação: ${errorDescription || error}`);
           return;
         }
 
-        if (data.session) {
+        // Tentar processar o callback OAuth
+        console.log("Processando callback OAuth...");
+        const { data: callbackData, error: callbackError } = await supabase.auth.getSession();
+
+        if (callbackError) {
+          console.error("Erro no callback OAuth:", callbackError);
+          setStatus("error");
+          setMessage("Erro ao processar autenticação: " + callbackError.message);
+          return;
+        }
+
+        if (callbackData.session) {
+          console.log("Sessão encontrada:", callbackData.session.user.email);
           setStatus("success");
           setMessage("Login realizado com sucesso! Redirecionando...");
 
@@ -40,6 +56,7 @@ export default function AuthCallbackPage() {
             router.push("/dashboard");
           }, 2000);
         } else {
+          console.log("Nenhuma sessão encontrada");
           setStatus("error");
           setMessage("Sessão não encontrada. Tente fazer login novamente.");
         }
