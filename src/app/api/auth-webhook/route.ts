@@ -21,7 +21,7 @@ async function syncUserFromAuth(authUser: AuthUser) {
     if (!authUser.email) {
       throw new Error("Email do usuário é obrigatório");
     }
-    
+
     console.log("🔄 Sincronizando usuário do Auth:", authUser.email);
 
     // Verificar se já existe na nossa tabela

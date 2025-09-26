@@ -49,8 +49,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Buscar usuário no Supabase Auth
-        const { createClient } = await import("@/lib/supabase-server");
-        const supabase = await createClient();
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        
+        if (!supabaseUrl || !supabaseServiceKey) {
+          throw new Error("Variáveis de ambiente do Supabase não configuradas");
+        }
+        
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
         const { data: authUsers, error: authError } =
           await supabase.auth.admin.listUsers();
 
@@ -58,7 +65,9 @@ export async function POST(request: NextRequest) {
           throw new Error(`Erro ao listar usuários: ${authError.message}`);
         }
 
-        const authUser = authUsers.users.find((u: { id: string; email?: string }) => u.id === userId);
+        const authUser = authUsers.users.find(
+          (u: { id: string; email?: string }) => u.id === userId
+        );
         if (!authUser) {
           return NextResponse.json(
             { error: "Usuário não encontrado no Supabase Auth" },
