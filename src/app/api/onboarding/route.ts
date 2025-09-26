@@ -59,10 +59,35 @@ export async function POST(request: NextRequest) {
 
     // Iniciar transação
     await db.transaction(async (tx) => {
-      // 1. Salvar informações da empresa
-      await tx
-        .insert(companies)
-        .values({
+      // 1. Verificar se já existe empresa para este usuário
+      const existingCompany = await tx
+        .select()
+        .from(companies)
+        .where(eq(companies.userId, userId))
+        .limit(1);
+
+      if (existingCompany.length > 0) {
+        // Atualizar empresa existente
+        await tx
+          .update(companies)
+          .set({
+            name: companyInfo.name,
+            segment: companyInfo.segment,
+            businessSize: companyInfo.businessSize,
+            monthlyRevenue: companyInfo.monthlyRevenue,
+            employeeCount: companyInfo.employeeCount,
+            description: companyInfo.description,
+            city: companyInfo.city,
+            state: companyInfo.state,
+            phone: companyInfo.phone,
+            cnpj: companyInfo.cnpj || null,
+            website: companyInfo.website || null,
+            updatedAt: new Date(),
+          })
+          .where(eq(companies.userId, userId));
+      } else {
+        // Inserir nova empresa
+        await tx.insert(companies).values({
           id: nanoid(),
           userId,
           name: companyInfo.name,
@@ -76,51 +101,63 @@ export async function POST(request: NextRequest) {
           phone: companyInfo.phone,
           cnpj: companyInfo.cnpj || null,
           website: companyInfo.website || null,
-        })
-        .onConflictDoUpdate({
-          target: companies.userId,
-          set: {
-            name: companyInfo.name,
-            segment: companyInfo.segment,
-            businessSize: companyInfo.businessSize,
-            monthlyRevenue: companyInfo.monthlyRevenue,
-            employeeCount: companyInfo.employeeCount,
-            description: companyInfo.description,
-            city: companyInfo.city,
-            state: companyInfo.state,
-            phone: companyInfo.phone,
-            cnpj: companyInfo.cnpj || null,
-            website: companyInfo.website || null,
-            updatedAt: new Date(),
-          },
         });
+      }
 
-      // 2. Salvar preferências do onboarding
-      await tx
-        .insert(onboardingPreferences)
-        .values({
+      // 2. Verificar se já existem preferências de onboarding
+      const existingOnboarding = await tx
+        .select()
+        .from(onboardingPreferences)
+        .where(eq(onboardingPreferences.userId, userId))
+        .limit(1);
+
+      if (existingOnboarding.length > 0) {
+        // Atualizar preferências existentes
+        await tx
+          .update(onboardingPreferences)
+          .set({
+            mainGoals: selectedFeatures,
+            onboardingCompleted: true,
+            currentStep: "completed",
+            completedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(onboardingPreferences.userId, userId));
+      } else {
+        // Inserir novas preferências
+        await tx.insert(onboardingPreferences).values({
           id: nanoid(),
           userId,
           mainGoals: selectedFeatures,
           onboardingCompleted: true,
           currentStep: "completed",
           completedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: onboardingPreferences.userId,
-          set: {
-            mainGoals: selectedFeatures,
-            onboardingCompleted: true,
-            currentStep: "completed",
-            completedAt: new Date(),
-            updatedAt: new Date(),
-          },
         });
+      }
 
-      // 3. Criar configurações do usuário
-      await tx
-        .insert(userSettings)
-        .values({
+      // 3. Verificar se já existem configurações do usuário
+      const existingUserSettings = await tx
+        .select()
+        .from(userSettings)
+        .where(eq(userSettings.userId, userId))
+        .limit(1);
+
+      if (existingUserSettings.length > 0) {
+        // Atualizar configurações existentes
+        await tx
+          .update(userSettings)
+          .set({
+            whatsappNumber: normalizedPhone || null,
+            preferences: {
+              selectedFeatures,
+              onboardingCompleted: true,
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(userSettings.userId, userId));
+      } else {
+        // Inserir novas configurações
+        await tx.insert(userSettings).values({
           id: nanoid(),
           userId,
           currency: "BRL",
@@ -130,18 +167,8 @@ export async function POST(request: NextRequest) {
             selectedFeatures,
             onboardingCompleted: true,
           },
-        })
-        .onConflictDoUpdate({
-          target: userSettings.userId,
-          set: {
-            whatsappNumber: normalizedPhone || null,
-            preferences: {
-              selectedFeatures,
-              onboardingCompleted: true,
-            },
-            updatedAt: new Date(),
-          },
         });
+      }
 
       // 4. Criar categorias selecionadas
       const categoriesToCreate = [];

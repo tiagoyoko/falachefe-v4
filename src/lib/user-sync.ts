@@ -1,0 +1,290 @@
+import { createClient } from "@/lib/supabase-server";
+import { db } from "@/lib/db";
+import { user } from "@/lib/schema";
+import { eq } from "drizzle-orm";
+
+// Função para obter cliente Supabase
+async function getSupabaseClient() {
+  return await createClient();
+}
+
+interface AuthUser {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    name?: string;
+    avatar_url?: string;
+    picture?: string;
+  };
+  email_confirmed_at?: string;
+  created_at: string;
+}
+
+interface DbUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  emailVerified?: boolean;
+  image?: string | null;
+}
+
+/**
+ * Sincroniza usuário do Supabase Auth para nossa tabela user
+ */
+export async function syncUserFromAuth(authUser: AuthUser) {
+  try {
+    if (!authUser.email) {
+      throw new Error("Email do usuário é obrigatório");
+    }
+    
+    console.log("🔄 Sincronizando usuário do Auth:", authUser.email);
+
+    // Verificar se já existe na nossa tabela
+    const existingUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, authUser.id))
+      .limit(1);
+
+    const userData = {
+      id: authUser.id,
+      name:
+        authUser.user_metadata?.name ||
+        authUser.email?.split("@")[0] ||
+        "Usuário",
+      email: authUser.email,
+      emailVerified: !!authUser.email_confirmed_at,
+      image:
+        authUser.user_metadata?.avatar_url ||
+        authUser.user_metadata?.picture ||
+        null,
+      role: "user" as const,
+      isActive: true,
+      createdAt: new Date(authUser.created_at),
+      updatedAt: new Date(),
+    };
+
+    if (existingUser.length > 0) {
+      // Atualizar usuário existente
+      await db
+        .update(user)
+        .set({
+          name: userData.name,
+          email: userData.email,
+          emailVerified: userData.emailVerified,
+          image: userData.image,
+          updatedAt: userData.updatedAt,
+        })
+        .where(eq(user.id, authUser.id));
+
+      console.log("✅ Usuário atualizado na tabela user");
+    } else {
+      // Criar novo usuário
+      await db.insert(user).values(userData);
+      console.log("✅ Novo usuário criado na tabela user");
+    }
+
+    return { success: true, user: userData };
+  } catch (error) {
+    console.error("❌ Erro ao sincronizar usuário do Auth:", error);
+    throw error;
+  }
+}
+
+/**
+ * Sincroniza usuário da nossa tabela para o Supabase Auth
+ */
+export async function syncUserToAuth(userId: string) {
+  try {
+    console.log("🔄 Sincronizando usuário para Auth:", userId);
+
+    // Buscar usuário na nossa tabela
+    const [dbUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (!dbUser) {
+      throw new Error("Usuário não encontrado na tabela user");
+    }
+
+    // Atualizar usuário no Supabase Auth
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      email: dbUser.email,
+      user_metadata: {
+        name: dbUser.name,
+        avatar_url: dbUser.image,
+      },
+    });
+
+    if (error) {
+      throw new Error(`Erro ao atualizar usuário no Auth: ${error.message}`);
+    }
+
+    console.log("✅ Usuário atualizado no Supabase Auth");
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Erro ao sincronizar usuário para Auth:", error);
+    throw error;
+  }
+}
+
+/**
+ * Remove usuário da nossa tabela
+ */
+export async function removeUserFromTable(userId: string) {
+  try {
+    console.log("🗑️ Removendo usuário da tabela user:", userId);
+
+    await db.delete(user).where(eq(user.id, userId));
+
+    console.log("✅ Usuário removido da tabela user");
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Erro ao remover usuário da tabela:", error);
+    throw error;
+  }
+}
+
+/**
+ * Remove usuário do Supabase Auth
+ */
+export async function removeUserFromAuth(userId: string) {
+  try {
+    console.log("🗑️ Removendo usuário do Supabase Auth:", userId);
+
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+
+    if (error) {
+      throw new Error(`Erro ao remover usuário do Auth: ${error.message}`);
+    }
+
+    console.log("✅ Usuário removido do Supabase Auth");
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Erro ao remover usuário do Auth:", error);
+    throw error;
+  }
+}
+
+/**
+ * Sincroniza todos os usuários órfãos
+ */
+export async function syncOrphanedUsers() {
+  try {
+    console.log("🔄 Sincronizando usuários órfãos...");
+
+    // Buscar todos os usuários do Supabase Auth
+    const supabase = await getSupabaseClient();
+    const { data: authUsers, error: authError } =
+      await supabase.auth.admin.listUsers();
+
+    if (authError) {
+      throw new Error(`Erro ao listar usuários do Auth: ${authError.message}`);
+    }
+
+    // Buscar todos os usuários da nossa tabela
+    const dbUsers = await db.select().from(user);
+
+    const authUserIds = authUsers.users.map((u: AuthUser) => u.id);
+    const dbUserIds = dbUsers.map((u: DbUser) => u.id);
+
+    // Usuários no Auth mas não na nossa tabela
+    const missingInDb = authUsers.users.filter(
+      (u: AuthUser) => !dbUserIds.includes(u.id)
+    );
+
+    // Usuários na nossa tabela mas não no Auth
+    const missingInAuth = dbUsers.filter(
+      (u: DbUser) => !authUserIds.includes(u.id)
+    );
+
+    console.log(`📊 Usuários órfãos encontrados:`);
+    console.log(`  - No Auth mas não na tabela: ${missingInDb.length}`);
+    console.log(`  - Na tabela mas não no Auth: ${missingInAuth.length}`);
+
+    // Sincronizar usuários do Auth para nossa tabela
+    for (const authUser of missingInDb) {
+      try {
+        await syncUserFromAuth(authUser);
+      } catch (error) {
+        console.error(`❌ Erro ao sincronizar ${authUser.email}:`, error);
+      }
+    }
+
+    // Remover usuários órfãos da nossa tabela (que não existem no Auth)
+    for (const dbUser of missingInAuth) {
+      try {
+        await removeUserFromTable(dbUser.id);
+        console.log(`✅ Usuário órfão removido: ${dbUser.email}`);
+      } catch (error) {
+        console.error(
+          `❌ Erro ao remover usuário órfão ${dbUser.email}:`,
+          error
+        );
+      }
+    }
+
+    return {
+      success: true,
+      synced: missingInDb.length,
+      removed: missingInAuth.length,
+    };
+  } catch (error) {
+    console.error("❌ Erro ao sincronizar usuários órfãos:", error);
+    throw error;
+  }
+}
+
+/**
+ * Verifica status da sincronização
+ */
+export async function getSyncStatus() {
+  try {
+    // Buscar todos os usuários do Supabase Auth
+    const supabase = await getSupabaseClient();
+    const { data: authUsers, error: authError } =
+      await supabase.auth.admin.listUsers();
+
+    if (authError) {
+      throw new Error(`Erro ao listar usuários do Auth: ${authError.message}`);
+    }
+
+    // Buscar todos os usuários da nossa tabela
+    const dbUsers = await db.select().from(user);
+
+    const authUserIds = authUsers.users.map((u: AuthUser) => u.id);
+    const dbUserIds = dbUsers.map((u: DbUser) => u.id);
+
+    // Usuários no Auth mas não na nossa tabela
+    const missingInDb = authUsers.users.filter(
+      (u: AuthUser) => !dbUserIds.includes(u.id)
+    );
+
+    // Usuários na nossa tabela mas não no Auth
+    const missingInAuth = dbUsers.filter(
+      (u: DbUser) => !authUserIds.includes(u.id)
+    );
+
+    return {
+      totalAuthUsers: authUsers.users.length,
+      totalDbUsers: dbUsers.length,
+      missingInDb: missingInDb.map((u: AuthUser) => ({ id: u.id, email: u.email || '' })),
+      missingInAuth: missingInAuth.map((u: DbUser) => ({
+        id: u.id,
+        email: u.email,
+      })),
+      isSynced: missingInDb.length === 0 && missingInAuth.length === 0,
+    };
+  } catch (error) {
+    console.error("❌ Erro ao verificar status da sincronização:", error);
+    throw error;
+  }
+}
