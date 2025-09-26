@@ -3,11 +3,19 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
 export default function AuthCallbackPage() {
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
   const [message, setMessage] = useState("");
   const router = useRouter();
   const supabase = createClient();
@@ -16,7 +24,7 @@ export default function AuthCallbackPage() {
     const handleAuthCallback = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           setStatus("error");
           setMessage("Erro ao processar autenticação: " + error.message);
@@ -26,7 +34,7 @@ export default function AuthCallbackPage() {
         if (data.session) {
           setStatus("success");
           setMessage("Login realizado com sucesso! Redirecionando...");
-          
+
           // Redirecionar para o dashboard após 2 segundos
           setTimeout(() => {
             router.push("/dashboard");

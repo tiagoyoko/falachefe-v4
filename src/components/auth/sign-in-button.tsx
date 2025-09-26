@@ -27,10 +27,7 @@ export function SignInButton() {
       <Button asChild>
         <Link href="/auth/signin">Entrar</Link>
       </Button>
-      <Button
-        variant="outline"
-        onClick={handleGoogleSignIn}
-      >
+      <Button variant="outline" onClick={handleGoogleSignIn}>
         Google
       </Button>
     </div>
