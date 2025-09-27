@@ -1,13 +1,16 @@
-import { OpenAIAgent } from "agent-squad/dist/agents/openAIAgent";
-import type { OpenAIAgentOptions } from "agent-squad/dist/agents/openAIAgent";
+import {
+  OpenAIAgent,
+  type OpenAIAgentOptions,
+} from "agent-squad/dist/agents/openAIAgent";
 import { Retriever } from "agent-squad/dist/retrievers/retriever";
 import { LiaKnowledgeRetriever } from "@/lib/knowledge-base/knowledge-retriever";
 
 class HrRagRetriever extends Retriever {
   async retrieve(
-    _text: string
+    text: string
   ): Promise<Array<{ content: string; score: number }>> {
     // Fallback para busca RAG básica se necessário
+    console.log("Busca RAG básica para:", text);
     return [];
   }
 

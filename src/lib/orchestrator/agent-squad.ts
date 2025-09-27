@@ -1,5 +1,4 @@
-import { AgentSquad } from "agent-squad";
-import { OpenAIClassifier } from "agent-squad";
+import { AgentSquad, OpenAIClassifier } from "agent-squad";
 
 import { DrizzleChatStorage } from "./drizzle-storage";
 import { extractAgentMessage } from "./response";

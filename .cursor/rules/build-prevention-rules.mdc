@@ -1,0 +1,246 @@
+# Regras de Prevenção de Erros de Build - FalaChefe v4
+
+## 🚨 PREVENÇÃO DE ERROS CRÍTICOS
+
+### 1. SUPABASE EDGE RUNTIME COMPATIBILITY
+
+**PROBLEMA:** APIs do Node.js (process.versions, process.version) não suportadas no Edge Runtime
+**PREVENÇÃO:**
+
+- SEMPRE manter `next.config.ts` com configuração para forçar Node.js runtime para Supabase
+- NUNCA usar Supabase diretamente em API routes sem especificar runtime
+- SEMPRE verificar se funções que usam Supabase estão configuradas corretamente
+- ANTES de fazer deploy, verificar se não há warnings de Edge Runtime no build
+
+```typescript
+// SEMPRE manter esta configuração no next.config.ts
+const nextConfig: NextConfig = {
+  serverExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
+  experimental: {
+    serverComponentsExternalPackages: [
+      "@supabase/ssr",
+      "@supabase/supabase-js",
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        "@supabase/realtime-js": "commonjs @supabase/realtime-js",
+        "@supabase/supabase-js": "commonjs @supabase/supabase-js",
+      });
+    }
+    return config;
+  },
+};
+```
+
+### 2. VARIÁVEIS NÃO UTILIZADAS (ESLint)
+
+**PROBLEMA:** Parâmetros definidos mas não utilizados causam warnings no build
+**PREVENÇÃO:**
+
+- NUNCA deixar parâmetros não utilizados com underscore (\_param) sem uso real
+- SEMPRE usar parâmetros ou removê-los completamente
+- PREFERIR adicionar console.log temporário que usa o parâmetro
+- ANTES de commit, SEMPRE executar `pnpm run lint` e `pnpm run typecheck`
+
+**EXEMPLOS DE CORREÇÃO:**
+
+```typescript
+// ❌ ERRADO - parâmetro não utilizado
+async retrieve(_text: string): Promise<Array<{ content: string; score: number }>> {
+  return [];
+}
+
+// ✅ CORRETO - parâmetro utilizado
+async retrieve(text: string): Promise<Array<{ content: string; score: number }>> {
+  console.log("Busca RAG básica para:", text);
+  return [];
+}
+
+// ✅ ALTERNATIVA - remover parâmetro se não necessário
+async retrieve(): Promise<Array<{ content: string; score: number }>> {
+  return [];
+}
+```
+
+### 3. BUILD E DEPLOY VALIDATION
+
+**PROBLEMA:** Deploy com warnings/erros quebram a aplicação
+**PREVENÇÃO:**
+
+- SEMPRE executar `pnpm run lint` antes de commit
+- SEMPRE executar `pnpm run typecheck` antes de commit
+- NUNCA fazer push com warnings de ESLint
+- SEMPRE verificar se o build local está limpo antes do deploy
+
+## 📋 CHECKLIST OBRIGATÓRIO ANTES DE CADA COMMIT
+
+### ✅ Validação de Código
+
+- [ ] `pnpm run lint` - SEM warnings ou erros
+- [ ] `pnpm run typecheck` - SEM erros de tipos
+- [ ] `pnpm run build` - Build local bem-sucedido
+
+### ✅ Validação de Supabase
+
+- [ ] Configuração do `next.config.ts` mantida
+- [ ] Nenhuma função usando Supabase sem runtime especificado
+- [ ] Variáveis de ambiente do Supabase configuradas
+
+### ✅ Validação de Variáveis
+
+- [ ] Nenhuma variável não utilizada com underscore
+- [ ] Parâmetros de função todos utilizados ou removidos
+- [ ] Imports não utilizados removidos
+
+## 🛠️ CONFIGURAÇÕES TÉCNICAS OBRIGATÓRIAS
+
+### ESLint Configuration
+
+```json
+{
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "error",
+    "no-console": "warn"
+  }
+}
+```
+
+### Package.json Scripts
+
+```json
+{
+  "scripts": {
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "build": "next build",
+    "pre-commit": "pnpm run lint && pnpm run typecheck"
+  }
+}
+```
+
+## 🚀 WORKFLOW DE DESENVOLVIMENTO
+
+### 1. Antes de Começar a Codificar
+
+- Verificar se `next.config.ts` está correto
+- Executar `pnpm run lint` para baseline limpo
+
+### 2. Durante o Desenvolvimento
+
+- NUNCA deixar variáveis não utilizadas
+- SEMPRE usar parâmetros de função ou removê-los
+- SEMPRE testar build local antes de commit
+
+### 3. Antes do Commit
+
+- Executar checklist obrigatório
+- Corrigir TODOS os warnings/erros
+- Fazer commit apenas com código limpo
+
+### 4. Antes do Deploy
+
+- Verificar build local
+- Confirmar que não há warnings no log
+- Testar funcionalidades críticas
+
+## 🔧 FERRAMENTAS DE PREVENÇÃO
+
+### Pre-commit Hook (Recomendado)
+
+```bash
+#!/bin/sh
+pnpm run lint
+pnpm run typecheck
+if [ $? -ne 0 ]; then
+  echo "❌ Commit rejeitado: erros de lint ou typecheck"
+  exit 1
+fi
+echo "✅ Código validado com sucesso"
+```
+
+### VS Code Settings
+
+```json
+{
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "eslint.validate": ["typescript", "typescriptreact"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
+```
+
+## 📚 PADRÕES DE CÓDIGO
+
+### Funções com Parâmetros Não Utilizados
+
+```typescript
+// ✅ PADRÃO CORRETO - Sempre usar ou remover
+async function processData(data: string, options?: ProcessOptions) {
+  console.log("Processando dados:", data);
+  if (options) {
+    console.log("Opções:", options);
+  }
+  // ... implementação
+}
+
+// ❌ EVITAR - Parâmetros não utilizados
+async function processData(data: string, _options?: ProcessOptions) {
+  // _options não é usado
+}
+```
+
+### Configuração de Runtime
+
+```typescript
+// ✅ PADRÃO CORRETO - Especificar runtime quando necessário
+export const runtime = "nodejs"; // Para APIs que usam Supabase
+
+// ✅ PADRÃO CORRETO - Edge runtime para funções simples
+export const runtime = "edge";
+```
+
+## 🚨 ALERTAS DE SEGURANÇA
+
+### NUNCA Fazer
+
+- Commit com warnings de ESLint
+- Deploy sem executar build local
+- Usar Supabase em Edge Runtime sem configuração adequada
+- Deixar variáveis não utilizadas em produção
+
+### SEMPRE Fazer
+
+- Executar validações antes de commit
+- Manter configurações do Next.js atualizadas
+- Usar parâmetros de função adequadamente
+- Testar build local antes de deploy
+
+## 📞 SUPORTE E ESCALAÇÃO
+
+### Se Encontrar Problemas
+
+1. Verificar se `next.config.ts` está correto
+2. Executar `pnpm run lint` e corrigir warnings
+3. Executar `pnpm run typecheck` e corrigir erros
+4. Testar build local com `pnpm run build`
+5. Se persistir, revisar configurações do Supabase
+
+### Logs de Debug
+
+```typescript
+// ✅ PADRÃO - Usar console.log para debug temporário
+console.log("Debug info:", { param1, param2 });
+
+// ❌ EVITAR - Deixar logs de debug em produção
+console.log("Debug:", variable); // Sempre remover antes do commit
+```
+
+---
+
+**Última atualização:** $(date)
+**Versão:** 1.0
+**Aplicável a:** FalaChefe v4 - Projeto de Chat com Agent Squad

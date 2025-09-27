@@ -92,12 +92,14 @@ export class EmbeddingService {
    * Busca documentos similares usando embedding
    */
   async searchSimilar(
-    _queryEmbedding: number[],
-    _options: SearchOptions = {}
+    queryEmbedding: number[],
+    options: SearchOptions = {}
   ): Promise<SearchResult[]> {
     // TODO: Implementar busca vetorial com pgvector
     // Por enquanto, retorna array vazio
     console.log("Busca vetorial ainda não implementada com pgvector");
+    console.log("Query embedding dimensions:", queryEmbedding.length);
+    console.log("Search options:", options);
     return [];
   }
 

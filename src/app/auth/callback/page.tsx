@@ -25,9 +25,9 @@ export default function AuthCallbackPage() {
       try {
         // Verificar se há parâmetros de erro na URL primeiro
         const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-        
+        const error = urlParams.get("error");
+        const errorDescription = urlParams.get("error_description");
+
         if (error) {
           console.error("Erro OAuth na URL:", error, errorDescription);
           setStatus("error");
@@ -37,12 +37,15 @@ export default function AuthCallbackPage() {
 
         // Tentar processar o callback OAuth
         console.log("Processando callback OAuth...");
-        const { data: callbackData, error: callbackError } = await supabase.auth.getSession();
+        const { data: callbackData, error: callbackError } =
+          await supabase.auth.getSession();
 
         if (callbackError) {
           console.error("Erro no callback OAuth:", callbackError);
           setStatus("error");
-          setMessage("Erro ao processar autenticação: " + callbackError.message);
+          setMessage(
+            "Erro ao processar autenticação: " + callbackError.message
+          );
           return;
         }
 

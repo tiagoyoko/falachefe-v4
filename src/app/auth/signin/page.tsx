@@ -49,9 +49,10 @@ export default function SignInPage() {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        const errorMessage = error && typeof error === 'object' && 'message' in error 
-          ? (error as { message: string }).message 
-          : 'Erro desconhecido';
+        const errorMessage =
+          error && typeof error === "object" && "message" in error
+            ? (error as { message: string }).message
+            : "Erro desconhecido";
         toast.error("Erro ao fazer login com Google: " + errorMessage);
       }
     } catch {

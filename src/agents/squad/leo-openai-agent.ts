@@ -1,5 +1,7 @@
-import { OpenAIAgent } from "agent-squad/dist/agents/openAIAgent";
-import type { OpenAIAgentOptions } from "agent-squad/dist/agents/openAIAgent";
+import {
+  OpenAIAgent,
+  type OpenAIAgentOptions,
+} from "agent-squad/dist/agents/openAIAgent";
 import { Retriever } from "agent-squad/dist/retrievers/retriever";
 import { searchRAG } from "@/lib/rag";
 import { LeoKnowledgeRetriever } from "@/lib/knowledge-base/knowledge-retriever";

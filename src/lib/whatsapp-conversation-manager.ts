@@ -259,9 +259,15 @@ export class WhatsAppConversationManager {
    */
   private async sendWelcomeMessage(
     sender: string,
-    _instanceId: string
+    instanceId: string
   ): Promise<void> {
     try {
+      console.log(
+        "Enviando mensagem de boas-vindas para:",
+        sender,
+        "instância:",
+        instanceId
+      );
       const welcomeText = `Olá! 👋
 
 Bem-vindo ao Fala Chefe! 
@@ -368,9 +374,15 @@ Obrigado! 🚀`;
    */
   private async sendTypingIndicator(
     sender: string,
-    _instanceId: string
+    instanceId: string
   ): Promise<void> {
     try {
+      console.log(
+        "Enviando indicador de digitando para:",
+        sender,
+        "instância:",
+        instanceId
+      );
       const uazapiService = getUazapiService();
       await uazapiService.sendPresence({
         number: sender.replace(/\D/g, ""),

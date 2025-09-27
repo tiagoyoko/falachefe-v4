@@ -469,12 +469,14 @@ export class KnowledgeBaseService {
    * Realiza busca vetorial (placeholder - será implementado com pgvector)
    */
   private async performVectorSearch(
-    _queryEmbedding: number[],
-    _options: SearchOptions
+    queryEmbedding: number[],
+    options: SearchOptions
   ): Promise<SearchResult[]> {
     // TODO: Implementar busca vetorial com pgvector
     // Por enquanto, retorna array vazio
     console.log("Busca vetorial com pgvector ainda não implementada");
+    console.log("Query embedding dimensions:", queryEmbedding.length);
+    console.log("Search options:", options);
     return [];
   }
 }

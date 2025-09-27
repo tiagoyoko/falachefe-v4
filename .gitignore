@@ -19,6 +19,13 @@
 # production
 /build
 
+# Cursor configuration with secrets
+.cursor/config.toml
+.cursor/environment.json
+
+# Scripts with API keys
+scripts/supabase-oauth-setup-guide.md
+
 # misc
 .DS_Store
 *.pem

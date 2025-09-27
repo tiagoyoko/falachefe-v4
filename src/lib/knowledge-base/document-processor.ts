@@ -165,9 +165,10 @@ export class DocumentProcessor {
   /**
    * Extrai conteúdo de arquivos PDF
    */
-  private async extractPdfContent(_file: File): Promise<string> {
+  private async extractPdfContent(file: File): Promise<string> {
     // TODO: Implementar extração de PDF
     // Por enquanto, retorna placeholder
+    console.log("Tentativa de extração de PDF para arquivo:", file.name);
     throw new Error(
       "Extração de PDF ainda não implementada. Use arquivos TXT ou MD por enquanto."
     );
@@ -176,9 +177,10 @@ export class DocumentProcessor {
   /**
    * Extrai conteúdo de arquivos DOCX
    */
-  private async extractDocxContent(_file: File): Promise<string> {
+  private async extractDocxContent(file: File): Promise<string> {
     // TODO: Implementar extração de DOCX
     // Por enquanto, retorna placeholder
+    console.log("Tentativa de extração de DOCX para arquivo:", file.name);
     throw new Error(
       "Extração de DOCX ainda não implementada. Use arquivos TXT ou MD por enquanto."
     );

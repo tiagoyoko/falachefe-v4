@@ -67,12 +67,12 @@ export function useAuth() {
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
         },
       });
-      
+
       if (error) {
         console.error("Erro no OAuth:", error);
         return { data: null, error };
       }
-      
+
       console.log("OAuth iniciado com sucesso:", data.url);
       return { data, error: null };
     } catch (error) {
