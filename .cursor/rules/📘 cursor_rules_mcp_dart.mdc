@@ -1,0 +1,379 @@
+---
+alwaysApply: true
+---
+
+# Memory Bank via MCP para Dart
+
+🎯 **Objetivo geral**
+
+Como engenheiro especialista cuja memória se reinicia entre sessões, devo confiar **inteiramente** no *Memory Bank* para recuperar contexto. Agora, em vez de utilizar apenas arquivos locais, o fluxo inclui ações através do servidor **MCP Dart** para gerenciar tarefas e documentos. Antes de iniciar qualquer tarefa, devo ler **todos** os arquivos da memória seguindo a hierarquia e validar que consigo comunicar‑me com o MCP (por exemplo, chamando `get_config`). Os comandos a seguir controlam o ciclo de vida deste banco de memória e as operações com Dart.
+
+## Comandos‑chave
+
+- 🧭 **follow your custom instructions**  
+  Inicia a *Validação pré‑voo* e, em seguida, segue o *padrão de acesso à memória*. Dependendo do contexto, entra no modo de planejamento ou de execução. Este comando continua servindo como gatilho principal para qualquer instrução personalizada.
+
+- 🔧 **initialize memory bank**  
+  Executa a validação pré‑voo e cria um novo projeto se ele não existir. Depois, cria a estrutura básica de arquivos (`projectbrief.md`, `productContext.md`, etc.) e prepara o workspace para interagir com o MCP.
+
+- 🔄 **update memory bank**  
+  Gera uma atualização de documentação quando há mudanças significativas (≥25 % de impacto no código), descoberta de padrões ou quando solicitado pelo usuário. Antes de atualizar, lê novamente todos os arquivos de contexto para garantir consistência. Este comando também deve ser usado após criar/atualizar tarefas ou documentos via MCP para refletir o novo estado.
+
+## Ferramentas MCP disponíveis
+
+O servidor MCP Dart oferece recursos de gerenciamento de tarefas, documentos, espaços e integração de “dartboards”. Entre os principais, destacam‑se:
+
+- ✅ **create_task** – cria nova tarefa com título, descrição, status, prioridade, tamanho, datas, dartboard, atribuições, tags, propriedades personalizadas e relacionamentos【893030205556183†L195-L274】.
+- ✏️ **update_task** – atualiza uma tarefa existente; permite modificar qualquer propriedade (título, descrição, status, prioridade, datas, assignees, tags, propriedades personalizadas e relacionamentos)【893030205556183†L300-L381】.
+- 🗑️ **delete_task** – move uma tarefa existente para a lixeira sem alterar os demais campos【893030205556183†L385-L400】.
+- 📄 **create_doc** – cria um documento com título obrigatório e texto ou pasta opcionais【893030205556183†L531-L555】.
+- 📝 **update_doc** – atualiza documento existente; permite alterar título, conteúdo e pasta【893030205556183†L576-L605】.
+- 📑 **list_docs / list_tasks** – lista documentos ou tarefas com filtros opcionais (por exemplo, pasta, status, prioridade, datas)【893030205556183†L531-L555】【893030205556183†L195-L274】.
+- 📦 **get_config** – obtém metadados do espaço do usuário, incluindo listas de assignees, status, prioridades, tags e tipos【893030205556183†L195-L274】. Deve ser chamado no início para obter valores válidos.
+
+Essas ferramentas seguem o protocolo MCP e retornam respostas JSON estruturadas. As entradas aceitam strings, arrays ou números conforme definido no *schema* do `tools.ts`【893030205556183†L195-L274】. IDs de tarefas ou documentos são cadeias alfanuméricas de 12 caracteres【893030205556183†L300-L331】; utilize sempre o ID quando for referenciar um item existente.
+
+## Ciclo de vida do banco de memória
+
+```mermaid
+flowchart TD
+    A[Início] --> B[Validação pré‑voo (*a*)]
+    B --> C{Projeto existe?}
+    C -->|Sim| D[Verificar arquivos principais]
+    C -->|Não| E[Criar projeto] --> H[Criar arquivos ausentes]
+
+    D --> F{Todos os arquivos presentes?}
+    F -->|Sim| G[Accessar memória (*f*)]
+    F -->|Não| H
+
+    H --> G
+    G --> I[Modo de Planejamento (*b*)]
+    G --> J[Modo de Execução (*c*)]
+
+    I --> K[Listar projetos]
+    K --> L[Selecionar contexto]
+    L --> M[Desenvolver estratégia]
+
+    J --> N[Ler .cursor/rules]
+    N --> O[Executar tarefa]
+    O --> P[Atualizar documentação (*d*)]
+
+    P --> Q{Atualização necessária?}
+    Q -->|Novos padrões/mudanças| R[Ler todos os arquivos]
+    Q -->|Solicitação do usuário| R
+    R --> S[Atualizar banco de memória]
+
+    S --> T[Processo de aprendizado (*e*)]
+    T --> U[Identificar padrões]
+    U --> V[Validar com usuário]
+    V --> W[Atualizar .cursor/rules]
+    W --> X[Aplicar padrões]
+    X --> O
+```
+
+## Índice de fases e requisitos
+
+### (a) Validação pré‑voo
+
+🛫 **Objetivo:** garantir que a estrutura local e a conexão com o MCP Dart estejam prontas.  
+Requisitos principais:
+
+- Verificar se o diretório do projeto existe e contém os arquivos básicos (`projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md`).  
+- Conferir se há novos arquivos personalizados (ex.: `features/*.md`, `api/*.md`) e listar para referência futura.  
+- Confirmar que a variável de ambiente `DART_TOKEN` está configurada e que o servidor MCP está acessível. Utilize a ferramenta `get_config` para obter assignees, status, prioridades e outras opções válidas【798144476205188†L69-L100】.
+
+### (b) Modo de Planejamento
+
+📌 **Entrada:** resultados de `list_directory` e leitura dos arquivos de contexto.  
+📌 **Saída:** um plano estruturado registrado em `activeContext.md` descrevendo quais tarefas ou documentos serão criados/atualizados e como isso se relaciona aos objetivos do projeto.
+
+Antes de propor qualquer ação, consulte o MCP para listar tarefas ou documentos existentes (`list_tasks` e `list_docs`) e analisar se é necessário criar novos itens ou apenas atualizar os existentes. Utilize os metadados retornados por `get_config` (assignees, status, prioridades etc.) para escolher valores válidos. Certifique‑se de documentar as decisões de planejamento, incluindo por que certas prioridades ou status foram escolhidos.
+
+### (c) Modo de Execução
+
+⚙️ **Objetivo:** executar chamadas JSON ao MCP Dart para criar ou atualizar tarefas e documentos, além de atualizar os arquivos locais.  
+Para cada operação, crie um objeto JSON contendo os campos exigidos pela ferramenta correspondente. Algumas diretrizes importantes:
+
+- Campos obrigatórios devem sempre ser fornecidos. Por exemplo, `create_task` requer `title`【893030205556183†L195-L274】 e `create_doc` requer `title`【893030205556183†L531-L555】; `update_task` e `update_doc` sempre exigem `id`【893030205556183†L300-L381】【893030205556183†L576-L605】.
+- Use `\n` para indicar quebras de linha dentro de strings; isso garante que o JSON seja válido.  
+- Mantenha as chaves em ordem lógica: primeiro campos de identificação (`id`, `title`), depois atributos (`description`, `priority`, `status`), seguidos de arrays (`assignees`, `tags`) e objetos (`customProperties`, `taskRelationships`).  
+- Utilize valores booleanos em minúsculo (`true`/`false`) e cite datas em formato ISO (por exemplo, `2025-05-10T09:00:00Z`)【893030205556183†L259-L270】.
+- Quando necessário referenciar objetos existentes (tarefas, documentos, pastas), use sempre o *ID* de 12 caracteres【893030205556183†L300-L331】【893030205556183†L584-L604】; nunca inferir IDs sem consulta prévia.
+
+**Exemplo de payload para `create_task`:**
+
+```json
+{
+  "projectName": "nome-do-projeto",
+  "fileName": "progress.md",
+  "content": "{\n  \"title\": \"Implementar integração MCP\",\n  \"description\": \"Criação de tarefa para integração do MCP com sistema X.\",\n  \"priority\": \"High\",\n  \"status\": \"Open\",\n  \"assignees\": [\"tiago@example.com\"],\n  \"tags\": [\"MCP\", \"Integração\"]\n}\n"
+}
+```
+
+Após receber a resposta do MCP (que conterá o ID gerado), registre a referência no `progress.md` e no `activeContext.md`. Para atualizações, inclua apenas os campos que precisam ser modificados; campos ausentes permanecerão inalterados.
+
+### (d) Atualizações de documentação
+
+📚 **Quando atualizar:**
+
+- Se a operação via MCP altera mais de 25 % do escopo do projeto (por exemplo, criação de diversos documentos ou tarefas relevantes).  
+- Quando é descoberto um padrão novo (por exemplo, uso recorrente de determinada prioridade ou tipo de tarefa).  
+- Sempre que o usuário emitir a instrução **update memory bank**.  
+- Em casos de ambiguidade de contexto (por exemplo, conflitos entre tarefas planejadas e o estado atual no MCP).
+
+**Processo:** Antes de atualizar qualquer arquivo, releia todos os arquivos do banco de memória para ter certeza de que a nova entrada não causa incoerências. Em seguida, aplique as mudanças no sentido inverso à hierarquia: atualize primeiro `progress.md` com o status e IDs das tarefas/documentos criados, depois `activeContext.md`, e por último os arquivos contextuais.
+
+### (e) Inteligência do projeto
+
+🧠 O arquivo `.cursor/rules` deve evoluir constantemente para capturar decisões e padrões específicos do projeto. Isso inclui:
+
+- Registrar caminhos críticos de implementação (por exemplo, fluxos repetitivos de criação/atualização de tarefas e documentos).  
+- Documentar preferências do usuário quanto a prioridades, status e formato de documentos.  
+- Acompanhar uso frequente de determinadas ferramentas (`create_task`, `update_task`, `create_doc`, etc.) e observar quais atributos são mais utilizados.  
+- Registrar decisões sobre relacionamento de tarefas (subtarefas, bloqueios e duplicatas) usando o esquema `taskRelationships`【893030205556183†L195-L274】.
+
+O ciclo de aprendizado consiste em validar essas observações com o usuário, atualizar o `.cursor/rules` e aplicar os padrões nas futuras execuções.
+
+### (f) Estrutura do Memory Bank
+
+O banco de memória mantém a mesma estrutura hierárquica do modelo original, pois facilita o raciocínio incremental e a rastreabilidade:
+
+```mermaid
+flowchart TD
+    PB[projectbrief.md\nRequisitos e metas principais] --> PC[productContext.md\nContexto do problema/soluções]
+    PB --> SP[systemPatterns.md\nArquitetura/padrões]
+    PB --> TC[techContext.md\nStack tecnológico/configuração]
+
+    PC --> AC[activeContext.md\nFoco e decisões atuais]
+    SP --> AC
+    TC --> AC
+
+    AC --> P[progress.md\nStatus e roteiro]
+
+    %% Seção de arquivos personalizados
+    subgraph CF[Arquivos personalizados]
+        CF1[features/*.md\nEspecificações de funcionalidades]
+        CF2[api/*.md\nDocumentação de APIs]
+        CF3[deployment/*.md\nGuias de deploy]
+    end
+
+    AC -.-> CF
+    CF -.-> P
+
+    style PB fill:#e066ff,stroke:#333,stroke-width:2px
+    style AC fill:#4d94ff,stroke:#333,stroke-width:2px
+    style P fill:#2eb82e,stroke:#333,stroke-width:2px
+    style CF fill:#fff,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style CF1 fill:#fff,stroke:#333
+    style CF2 fill:#fff,stroke:#333
+    style CF3 fill:#fff,stroke:#333
+```
+
+📁 **Relações entre arquivos:**
+
+- O `projectbrief.md` fornece requisitos e metas que alimentam todos os outros contextos.  
+- Os arquivos de contexto (`productContext.md`, `systemPatterns.md`, `techContext.md`) informam as decisões registradas em `activeContext.md`.  
+- O `progress.md` acompanha a implementação com base no contexto ativo, registrando IDs de tarefas e documentos criados via MCP.  
+- Arquivos personalizados podem ser adicionados conforme necessário (por exemplo, especificações de funcionalidades ou guias de integração de APIs). Estes devem seguir convenções de nomenclatura e ser referenciados em `activeContext.md` quando criados.
+
+📖 **Padrão de acesso:**
+
+- Sempre ler os arquivos na ordem hierárquica (from `projectbrief.md` down to custom files) antes de executar qualquer ação; isso garante compreensão do contexto.  
+- Ao atualizar, aplique mudanças no sentido inverso (primeiro `progress.md`, depois `activeContext.md` e, por fim, os arquivos contextuais).  
+- Consulte o `.cursor/rules` durante todo o processo para seguir as regras do projeto.  
+- Integre novos arquivos personalizados ou campos de tarefas e documentos conforme as necessidades do projeto, mencionando‑os explicitamente no `activeContext.md`.
+
+---
+
+Essas regras adaptadas permitem utilizar o servidor **MCP Dart** para criar, atualizar e organizar tarefas e documentos de forma coerente com o ciclo de vida do Memory Bank. A integração cuidadosa entre a estrutura de arquivos local e as operações remotas garante que o contexto seja preservado e que decisões sejam documentadas de maneira transparente.
+
+## 📚 **Referências Adicionais**
+
+Para detalhes específicos sobre criação e gerenciamento de tasks via Dart CLI, consulte:
+- `dart-cli-best-practices.mdc` - Melhores práticas detalhadas para comandos Dart CLI
+- Sempre seguir as regras de criação de tasks com títulos descritivos e atualização de progresso
+
+# Memory Bank via MCP para Dart
+
+🎯 **Objetivo geral**
+
+Como engenheiro especialista cuja memória se reinicia entre sessões, devo confiar **inteiramente** no *Memory Bank* para recuperar contexto. Agora, em vez de utilizar apenas arquivos locais, o fluxo inclui ações através do servidor **MCP Dart** para gerenciar tarefas e documentos. Antes de iniciar qualquer tarefa, devo ler **todos** os arquivos da memória seguindo a hierarquia e validar que consigo comunicar‑me com o MCP (por exemplo, chamando `get_config`). Os comandos a seguir controlam o ciclo de vida deste banco de memória e as operações com Dart.
+
+## Comandos‑chave
+
+- 🧭 **follow your custom instructions**  
+  Inicia a *Validação pré‑voo* e, em seguida, segue o *padrão de acesso à memória*. Dependendo do contexto, entra no modo de planejamento ou de execução. Este comando continua servindo como gatilho principal para qualquer instrução personalizada.
+
+- 🔧 **initialize memory bank**  
+  Executa a validação pré‑voo e cria um novo projeto se ele não existir. Depois, cria a estrutura básica de arquivos (`projectbrief.md`, `productContext.md`, etc.) e prepara o workspace para interagir com o MCP.
+
+- 🔄 **update memory bank**  
+  Gera uma atualização de documentação quando há mudanças significativas (≥25 % de impacto no código), descoberta de padrões ou quando solicitado pelo usuário. Antes de atualizar, lê novamente todos os arquivos de contexto para garantir consistência. Este comando também deve ser usado após criar/atualizar tarefas ou documentos via MCP para refletir o novo estado.
+
+## Ferramentas MCP disponíveis
+
+O servidor MCP Dart oferece recursos de gerenciamento de tarefas, documentos, espaços e integração de “dartboards”. Entre os principais, destacam‑se:
+
+- ✅ **create_task** – cria nova tarefa com título, descrição, status, prioridade, tamanho, datas, dartboard, atribuições, tags, propriedades personalizadas e relacionamentos【893030205556183†L195-L274】.
+- ✏️ **update_task** – atualiza uma tarefa existente; permite modificar qualquer propriedade (título, descrição, status, prioridade, datas, assignees, tags, propriedades personalizadas e relacionamentos)【893030205556183†L300-L381】.
+- 🗑️ **delete_task** – move uma tarefa existente para a lixeira sem alterar os demais campos【893030205556183†L385-L400】.
+- 📄 **create_doc** – cria um documento com título obrigatório e texto ou pasta opcionais【893030205556183†L531-L555】.
+- 📝 **update_doc** – atualiza documento existente; permite alterar título, conteúdo e pasta【893030205556183†L576-L605】.
+- 📑 **list_docs / list_tasks** – lista documentos ou tarefas com filtros opcionais (por exemplo, pasta, status, prioridade, datas)【893030205556183†L531-L555】【893030205556183†L195-L274】.
+- 📦 **get_config** – obtém metadados do espaço do usuário, incluindo listas de assignees, status, prioridades, tags e tipos【893030205556183†L195-L274】. Deve ser chamado no início para obter valores válidos.
+
+Essas ferramentas seguem o protocolo MCP e retornam respostas JSON estruturadas. As entradas aceitam strings, arrays ou números conforme definido no *schema* do `tools.ts`【893030205556183†L195-L274】. IDs de tarefas ou documentos são cadeias alfanuméricas de 12 caracteres【893030205556183†L300-L331】; utilize sempre o ID quando for referenciar um item existente.
+
+## Ciclo de vida do banco de memória
+
+```mermaid
+flowchart TD
+    A[Início] --> B[Validação pré‑voo (*a*)]
+    B --> C{Projeto existe?}
+    C -->|Sim| D[Verificar arquivos principais]
+    C -->|Não| E[Criar projeto] --> H[Criar arquivos ausentes]
+
+    D --> F{Todos os arquivos presentes?}
+    F -->|Sim| G[Accessar memória (*f*)]
+    F -->|Não| H
+
+    H --> G
+    G --> I[Modo de Planejamento (*b*)]
+    G --> J[Modo de Execução (*c*)]
+
+    I --> K[Listar projetos]
+    K --> L[Selecionar contexto]
+    L --> M[Desenvolver estratégia]
+
+    J --> N[Ler .cursor/rules]
+    N --> O[Executar tarefa]
+    O --> P[Atualizar documentação (*d*)]
+
+    P --> Q{Atualização necessária?}
+    Q -->|Novos padrões/mudanças| R[Ler todos os arquivos]
+    Q -->|Solicitação do usuário| R
+    R --> S[Atualizar banco de memória]
+
+    S --> T[Processo de aprendizado (*e*)]
+    T --> U[Identificar padrões]
+    U --> V[Validar com usuário]
+    V --> W[Atualizar .cursor/rules]
+    W --> X[Aplicar padrões]
+    X --> O
+```
+
+## Índice de fases e requisitos
+
+### (a) Validação pré‑voo
+
+🛫 **Objetivo:** garantir que a estrutura local e a conexão com o MCP Dart estejam prontas.  
+Requisitos principais:
+
+- Verificar se o diretório do projeto existe e contém os arquivos básicos (`projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md`).  
+- Conferir se há novos arquivos personalizados (ex.: `features/*.md`, `api/*.md`) e listar para referência futura.  
+- Confirmar que a variável de ambiente `DART_TOKEN` está configurada e que o servidor MCP está acessível. Utilize a ferramenta `get_config` para obter assignees, status, prioridades e outras opções válidas【798144476205188†L69-L100】.
+
+### (b) Modo de Planejamento
+
+📌 **Entrada:** resultados de `list_directory` e leitura dos arquivos de contexto.  
+📌 **Saída:** um plano estruturado registrado em `activeContext.md` descrevendo quais tarefas ou documentos serão criados/atualizados e como isso se relaciona aos objetivos do projeto.
+
+Antes de propor qualquer ação, consulte o MCP para listar tarefas ou documentos existentes (`list_tasks` e `list_docs`) e analisar se é necessário criar novos itens ou apenas atualizar os existentes. Utilize os metadados retornados por `get_config` (assignees, status, prioridades etc.) para escolher valores válidos. Certifique‑se de documentar as decisões de planejamento, incluindo por que certas prioridades ou status foram escolhidos.
+
+### (c) Modo de Execução
+
+⚙️ **Objetivo:** executar chamadas JSON ao MCP Dart para criar ou atualizar tarefas e documentos, além de atualizar os arquivos locais.  
+Para cada operação, crie um objeto JSON contendo os campos exigidos pela ferramenta correspondente. Algumas diretrizes importantes:
+
+- Campos obrigatórios devem sempre ser fornecidos. Por exemplo, `create_task` requer `title`【893030205556183†L195-L274】 e `create_doc` requer `title`【893030205556183†L531-L555】; `update_task` e `update_doc` sempre exigem `id`【893030205556183†L300-L381】【893030205556183†L576-L605】.
+- Use `\n` para indicar quebras de linha dentro de strings; isso garante que o JSON seja válido.  
+- Mantenha as chaves em ordem lógica: primeiro campos de identificação (`id`, `title`), depois atributos (`description`, `priority`, `status`), seguidos de arrays (`assignees`, `tags`) e objetos (`customProperties`, `taskRelationships`).  
+- Utilize valores booleanos em minúsculo (`true`/`false`) e cite datas em formato ISO (por exemplo, `2025-05-10T09:00:00Z`)【893030205556183†L259-L270】.
+- Quando necessário referenciar objetos existentes (tarefas, documentos, pastas), use sempre o *ID* de 12 caracteres【893030205556183†L300-L331】【893030205556183†L584-L604】; nunca inferir IDs sem consulta prévia.
+
+**Exemplo de payload para `create_task`:**
+
+```json
+{
+  "projectName": "nome-do-projeto",
+  "fileName": "progress.md",
+  "content": "{\n  \"title\": \"Implementar integração MCP\",\n  \"description\": \"Criação de tarefa para integração do MCP com sistema X.\",\n  \"priority\": \"High\",\n  \"status\": \"Open\",\n  \"assignees\": [\"tiago@example.com\"],\n  \"tags\": [\"MCP\", \"Integração\"]\n}\n"
+}
+```
+
+Após receber a resposta do MCP (que conterá o ID gerado), registre a referência no `progress.md` e no `activeContext.md`. Para atualizações, inclua apenas os campos que precisam ser modificados; campos ausentes permanecerão inalterados.
+
+### (d) Atualizações de documentação
+
+📚 **Quando atualizar:**
+
+- Se a operação via MCP altera mais de 25 % do escopo do projeto (por exemplo, criação de diversos documentos ou tarefas relevantes).  
+- Quando é descoberto um padrão novo (por exemplo, uso recorrente de determinada prioridade ou tipo de tarefa).  
+- Sempre que o usuário emitir a instrução **update memory bank**.  
+- Em casos de ambiguidade de contexto (por exemplo, conflitos entre tarefas planejadas e o estado atual no MCP).
+
+**Processo:** Antes de atualizar qualquer arquivo, releia todos os arquivos do banco de memória para ter certeza de que a nova entrada não causa incoerências. Em seguida, aplique as mudanças no sentido inverso à hierarquia: atualize primeiro `progress.md` com o status e IDs das tarefas/documentos criados, depois `activeContext.md`, e por último os arquivos contextuais.
+
+### (e) Inteligência do projeto
+
+🧠 O arquivo `.cursor/rules` deve evoluir constantemente para capturar decisões e padrões específicos do projeto. Isso inclui:
+
+- Registrar caminhos críticos de implementação (por exemplo, fluxos repetitivos de criação/atualização de tarefas e documentos).  
+- Documentar preferências do usuário quanto a prioridades, status e formato de documentos.  
+- Acompanhar uso frequente de determinadas ferramentas (`create_task`, `update_task`, `create_doc`, etc.) e observar quais atributos são mais utilizados.  
+- Registrar decisões sobre relacionamento de tarefas (subtarefas, bloqueios e duplicatas) usando o esquema `taskRelationships`【893030205556183†L195-L274】.
+
+O ciclo de aprendizado consiste em validar essas observações com o usuário, atualizar o `.cursor/rules` e aplicar os padrões nas futuras execuções.
+
+### (f) Estrutura do Memory Bank
+
+O banco de memória mantém a mesma estrutura hierárquica do modelo original, pois facilita o raciocínio incremental e a rastreabilidade:
+
+```mermaid
+flowchart TD
+    PB[projectbrief.md\nRequisitos e metas principais] --> PC[productContext.md\nContexto do problema/soluções]
+    PB --> SP[systemPatterns.md\nArquitetura/padrões]
+    PB --> TC[techContext.md\nStack tecnológico/configuração]
+
+    PC --> AC[activeContext.md\nFoco e decisões atuais]
+    SP --> AC
+    TC --> AC
+
+    AC --> P[progress.md\nStatus e roteiro]
+
+    %% Seção de arquivos personalizados
+    subgraph CF[Arquivos personalizados]
+        CF1[features/*.md\nEspecificações de funcionalidades]
+        CF2[api/*.md\nDocumentação de APIs]
+        CF3[deployment/*.md\nGuias de deploy]
+    end
+
+    AC -.-> CF
+    CF -.-> P
+
+    style PB fill:#e066ff,stroke:#333,stroke-width:2px
+    style AC fill:#4d94ff,stroke:#333,stroke-width:2px
+    style P fill:#2eb82e,stroke:#333,stroke-width:2px
+    style CF fill:#fff,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style CF1 fill:#fff,stroke:#333
+    style CF2 fill:#fff,stroke:#333
+    style CF3 fill:#fff,stroke:#333
+```
+
+📁 **Relações entre arquivos:**
+
+- O `projectbrief.md` fornece requisitos e metas que alimentam todos os outros contextos.  
+- Os arquivos de contexto (`productContext.md`, `systemPatterns.md`, `techContext.md`) informam as decisões registradas em `activeContext.md`.  
+- O `progress.md` acompanha a implementação com base no contexto ativo, registrando IDs de tarefas e documentos criados via MCP.  
+- Arquivos personalizados podem ser adicionados conforme necessário (por exemplo, especificações de funcionalidades ou guias de integração de APIs). Estes devem seguir convenções de nomenclatura e ser referenciados em `activeContext.md` quando criados.
+
+📖 **Padrão de acesso:**
+
+- Sempre ler os arquivos na ordem hierárquica (from `projectbrief.md` down to custom files) antes de executar qualquer ação; isso garante compreensão do contexto.  
+- Ao atualizar, aplique mudanças no sentido inverso (primeiro `progress.md`, depois `activeContext.md` e, por fim, os arquivos contextuais).  
+- Consulte o `.cursor/rules` durante todo o processo para seguir as regras do projeto.  
+- Integre novos arquivos personalizados ou campos de tarefas e documentos conforme as necessidades do projeto, mencionando‑os explicitamente no `activeContext.md`.
+
+---
+
+Essas regras adaptadas permitem utilizar o servidor **MCP Dart** para criar, atualizar e organizar tarefas e documentos de forma coerente com o ciclo de vida do Memory Bank. A integração cuidadosa entre a estrutura de arquivos local e as operações remotas garante que o contexto seja preservado e que decisões sejam documentadas de maneira transparente.

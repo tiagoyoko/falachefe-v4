@@ -6,12 +6,17 @@ import { supervise } from "@/agents/supervisor";
 import { getOrchestrator } from "@/lib/orchestrator/agent-squad";
 import { extractAgentMessage } from "@/lib/orchestrator/response";
 import { llmService } from "@/lib/llm-service";
+import { 
+  processMessageWithMultiLayerClassification,
+  processMessageWithSpecificAgent,
+  getClassificationStats 
+} from "@/lib/orchestrator/enhanced-agent-squad";
 
-// POST /api/agent - Processar comando do agente de fluxo de caixa
+// POST /api/agent - Processar comando com classificação multi-camada
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, command } = body;
+    const { userId, command, useMultiLayer = true, agentName, conversationHistory } = body;
 
     if (!userId || !command) {
       return NextResponse.json(
@@ -34,20 +39,100 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Tentar via AgentSquad; fallback para supervisor em caso de erro
-    let response: unknown;
-    try {
-      const orchestrator = getOrchestrator();
-      const sessionId = `${userId}`; // simples por enquanto; pode ser chatId
-      response = await orchestrator.routeRequest(command, userId, sessionId);
-    } catch {
-      response = await supervise({ userId, message: command });
+    // Extrair chatId do corpo da requisição se disponível
+    const chatId = body.chatId;
+
+    let response;
+    
+    if (useMultiLayer) {
+      // Usar classificação multi-camada com sessões persistentes
+      try {
+        response = await processMessageWithMultiLayerClassification(
+          command,
+          userId,
+          chatId,
+          conversationHistory
+        );
+      } catch (error) {
+        console.error("Erro na classificação multi-camada, usando fallback:", error);
+        // Fallback para processamento simples
+        response = await processMessageWithSpecificAgent(command, userId, chatId, "max");
+      }
+    } else if (agentName) {
+      // Usar agente específico com sessões persistentes
+      response = await processMessageWithSpecificAgent(
+        command,
+        userId,
+        chatId,
+        agentName as "leo" | "max" | "lia"
+      );
+    } else {
+      // Fallback para sistema antigo com sessão temporária
+      const fallbackSessionId = `${userId}_${Date.now()}`;
+      try {
+        const orchestrator = getOrchestrator();
+        const fallbackResponse = await orchestrator.routeRequest(command, userId, fallbackSessionId);
+        const message = await extractAgentMessage(fallbackResponse);
+        
+        response = {
+          message: message || "Resposta não disponível",
+          agentName: "max",
+          success: Boolean(message),
+          classification: {
+            primaryIntent: "geral" as const,
+            secondaryIntent: { general: "outro" as const },
+            urgency: "media" as const,
+            conversationContext: "inicial" as const,
+            confidence: 0.5,
+            reasoning: "Fallback para sistema antigo"
+          },
+          priority: 1,
+          processingTime: 0,
+          metadata: {
+            sessionId: fallbackSessionId,
+            userId,
+            timestamp: new Date(),
+            confidence: 0.5,
+          },
+        };
+      } catch {
+        const superviseResponse = await supervise({ userId, message: command });
+        response = {
+          message: superviseResponse.message || "Resposta não disponível",
+          agentName: "max",
+          success: superviseResponse.success,
+          classification: {
+            primaryIntent: "geral" as const,
+            secondaryIntent: { general: "outro" as const },
+            urgency: "media" as const,
+            conversationContext: "inicial" as const,
+            confidence: 0.5,
+            reasoning: "Fallback via supervisor"
+          },
+          priority: 1,
+          processingTime: 0,
+          metadata: {
+            sessionId: fallbackSessionId,
+            userId,
+            timestamp: new Date(),
+            confidence: 0.5,
+          },
+        };
+      }
     }
 
-    const message = await extractAgentMessage(response);
     return NextResponse.json({
-      success: Boolean(message),
-      data: message ?? null,
+      success: response.success,
+      data: response.message,
+      metadata: {
+        agent: response.agentName,
+        classification: response.classification,
+        priority: response.priority,
+        processingTime: response.processingTime,
+        confidence: response.metadata.confidence,
+        sessionId: response.metadata.sessionId,
+        sessionInfo: response.metadata.sessionInfo,
+      },
     });
   } catch (error) {
     console.error("Erro ao processar comando do agente:", error);
@@ -58,12 +143,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/agent - Obter insights proativos
+// GET /api/agent - Obter insights proativos ou estatísticas de classificação
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const type = searchParams.get("type") as "insights" | "summary" | undefined;
+    const type = searchParams.get("type") as "insights" | "summary" | "stats" | undefined;
 
     if (!userId) {
       return NextResponse.json(
@@ -88,7 +173,18 @@ export async function GET(request: NextRequest) {
 
     let response;
 
-    if (type === "insights") {
+    if (type === "stats") {
+      // Obter estatísticas de classificação multi-camada
+      const stats = await getClassificationStats(userId);
+      return NextResponse.json({
+        success: true,
+        data: {
+          type: "classification_stats",
+          stats,
+          message: "Estatísticas de classificação multi-camada obtidas com sucesso"
+        },
+      });
+    } else if (type === "insights") {
       // Gerar insights proativos
       response = await llmService.generateProactiveInsights(userId);
     } else {

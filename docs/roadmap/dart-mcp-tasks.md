@@ -1,24 +1,27 @@
 # 📋 Tarefas para Dart MCP - FalaChefe v4
 
 ## 🎯 Projeto Base
+
 **Nome:** FalaChefe v4  
 **Responsável:** Tiago Yoko  
 **Início:** 28 de Setembro de 2025  
-**Prazo:** 11 de Outubro de 2025  
+**Prazo:** 11 de Outubro de 2025
 
 ---
 
 ## 📅 SPRINT 1: Chat com Agentes IA (28/09 - 04/10)
 
 ### **TAREFA 1.1: Configurar WebSocket**
+
 **Estimativa:** 8 horas  
 **Prioridade:** Crítica  
-**Dependências:** Nenhuma  
+**Dependências:** Nenhuma
 
 **Descrição:**
 Implementar comunicação em tempo real entre cliente e servidor para o sistema de chat.
 
 **Subtarefas:**
+
 - [ ] Instalar e configurar Socket.io no servidor
 - [ ] Configurar cliente Socket.io no frontend
 - [ ] Implementar reconexão automática
@@ -26,6 +29,7 @@ Implementar comunicação em tempo real entre cliente e servidor para o sistema 
 - [ ] Testar conexão em diferentes cenários de rede
 
 **Critérios de Aceite:**
+
 - ✅ Conexão estabelecida em < 2 segundos
 - ✅ Reconexão automática em caso de queda
 - ✅ Heartbeat funcionando corretamente
@@ -33,14 +37,16 @@ Implementar comunicação em tempo real entre cliente e servidor para o sistema 
 ---
 
 ### **TAREFA 1.2: Interface do Chat**
+
 **Estimativa:** 12 horas  
 **Prioridade:** Crítica  
-**Dependências:** TAREFA 1.1  
+**Dependências:** TAREFA 1.1
 
 **Descrição:**
 Criar interface completa para o sistema de chat com todas as funcionalidades necessárias.
 
 **Subtarefas:**
+
 - [ ] Componente de lista de mensagens
 - [ ] Componente de input de texto
 - [ ] Indicador de digitação
@@ -50,6 +56,7 @@ Criar interface completa para o sistema de chat com todas as funcionalidades nec
 - [ ] Responsividade mobile
 
 **Critérios de Aceite:**
+
 - ✅ Interface intuitiva e responsiva
 - ✅ Indicadores visuais claros
 - ✅ Funciona perfeitamente em mobile
@@ -57,14 +64,16 @@ Criar interface completa para o sistema de chat com todas as funcionalidades nec
 ---
 
 ### **TAREFA 1.3: Integração com Agentes IA**
+
 **Estimativa:** 8 horas  
 **Prioridade:** Crítica  
-**Dependências:** TAREFA 1.2  
+**Dependências:** TAREFA 1.2
 
 **Descrição:**
 Conectar o chat com os agentes IA existentes (Leo, Max, Lia).
 
 **Subtarefas:**
+
 - [ ] Configurar roteamento de mensagens por agente
 - [ ] Integrar com Leo (Financeiro)
 - [ ] Integrar com Max (Marketing)
@@ -73,6 +82,7 @@ Conectar o chat com os agentes IA existentes (Leo, Max, Lia).
 - [ ] Configurar personas visuais de cada agente
 
 **Critérios de Aceite:**
+
 - ✅ 3 agentes funcionando corretamente
 - ✅ Roteamento automático por contexto
 - ✅ Respostas contextuais dos agentes
@@ -80,14 +90,16 @@ Conectar o chat com os agentes IA existentes (Leo, Max, Lia).
 ---
 
 ### **TAREFA 1.4: Histórico de Conversas**
+
 **Estimativa:** 6 horas  
 **Prioridade:** Média  
-**Dependências:** TAREFA 1.3  
+**Dependências:** TAREFA 1.3
 
 **Descrição:**
 Implementar sistema de persistência e recuperação de conversas.
 
 **Subtarefas:**
+
 - [ ] Schema de banco para mensagens
 - [ ] API para salvar mensagens
 - [ ] API para carregar histórico
@@ -96,6 +108,7 @@ Implementar sistema de persistência e recuperação de conversas.
 - [ ] Limpeza automática de mensagens antigas
 
 **Critérios de Aceite:**
+
 - ✅ Histórico carregado corretamente
 - ✅ Busca funcionando
 - ✅ Performance otimizada
@@ -103,14 +116,16 @@ Implementar sistema de persistência e recuperação de conversas.
 ---
 
 ### **TAREFA 1.5: Funcionalidades Avançadas**
+
 **Estimativa:** 6 horas  
 **Prioridade:** Baixa  
-**Dependências:** TAREFA 1.4  
+**Dependências:** TAREFA 1.4
 
 **Descrição:**
 Implementar funcionalidades extras para melhorar a experiência do usuário.
 
 **Subtarefas:**
+
 - [ ] Upload de arquivos no chat
 - [ ] Suporte a emojis
 - [ ] Formatação de texto (negrito, itálico)
@@ -119,6 +134,7 @@ Implementar funcionalidades extras para melhorar a experiência do usuário.
 - [ ] Configurações do chat
 
 **Critérios de Aceite:**
+
 - ✅ Upload de arquivos funcionando
 - ✅ Formatação de texto implementada
 - ✅ Notificações configuráveis
@@ -128,14 +144,16 @@ Implementar funcionalidades extras para melhorar a experiência do usuário.
 ## 📅 SPRINT 2: Cashflow + RAG + WhatsApp (05/10 - 11/10)
 
 ### **TAREFA 2.1: Dashboard Financeiro**
+
 **Estimativa:** 12 horas  
 **Prioridade:** Crítica  
-**Dependências:** Nenhuma  
+**Dependências:** Nenhuma
 
 **Descrição:**
 Criar dashboard principal para visualização dos dados financeiros.
 
 **Subtarefas:**
+
 - [ ] Layout responsivo do dashboard
 - [ ] Cards de resumo (receitas, despesas, saldo)
 - [ ] Gráfico de evolução mensal
@@ -144,6 +162,7 @@ Criar dashboard principal para visualização dos dados financeiros.
 - [ ] Atualização em tempo real
 
 **Critérios de Aceite:**
+
 - ✅ Dashboard responsivo e intuitivo
 - ✅ Dados atualizados em tempo real
 - ✅ Filtros funcionando corretamente
@@ -151,14 +170,16 @@ Criar dashboard principal para visualização dos dados financeiros.
 ---
 
 ### **TAREFA 2.2: Sistema de Transações**
+
 **Estimativa:** 10 horas  
 **Prioridade:** Crítica  
-**Dependências:** TAREFA 2.1  
+**Dependências:** TAREFA 2.1
 
 **Descrição:**
 Implementar sistema completo de entrada e gerenciamento de transações.
 
 **Subtarefas:**
+
 - [ ] Formulário de entrada de receitas
 - [ ] Formulário de entrada de despesas
 - [ ] Validação de dados
@@ -167,6 +188,7 @@ Implementar sistema completo de entrada e gerenciamento de transações.
 - [ ] Exclusão de transações
 
 **Critérios de Aceite:**
+
 - ✅ Formulários funcionando perfeitamente
 - ✅ Validação robusta
 - ✅ Integração com categorias do onboarding
@@ -174,14 +196,16 @@ Implementar sistema completo de entrada e gerenciamento de transações.
 ---
 
 ### **TAREFA 2.3: Visualizações e Gráficos**
+
 **Estimativa:** 10 horas  
 **Prioridade:** Alta  
-**Dependências:** TAREFA 2.2  
+**Dependências:** TAREFA 2.2
 
 **Descrição:**
 Implementar gráficos e visualizações para análise dos dados financeiros.
 
 **Subtarefas:**
+
 - [ ] Gráfico de pizza (receitas vs despesas)
 - [ ] Gráfico de linha (evolução temporal)
 - [ ] Gráfico de barras (categorias)
@@ -190,6 +214,7 @@ Implementar gráficos e visualizações para análise dos dados financeiros.
 - [ ] Responsividade dos gráficos
 
 **Critérios de Aceite:**
+
 - ✅ Gráficos responsivos e interativos
 - ✅ Filtros funcionando corretamente
 - ✅ Performance otimizada
@@ -197,14 +222,16 @@ Implementar gráficos e visualizações para análise dos dados financeiros.
 ---
 
 ### **TAREFA 2.4: Sistema RAG - Upload**
+
 **Estimativa:** 8 horas  
 **Prioridade:** Média  
-**Dependências:** TAREFA 2.3  
+**Dependências:** TAREFA 2.3
 
 **Descrição:**
 Implementar sistema de upload e processamento de documentos para a base de conhecimento.
 
 **Subtarefas:**
+
 - [ ] Interface de upload drag-and-drop
 - [ ] Suporte a PDF, DOC, TXT, MD
 - [ ] Validação de tipos de arquivo
@@ -213,6 +240,7 @@ Implementar sistema de upload e processamento de documentos para a base de conhe
 - [ ] Status de processamento
 
 **Critérios de Aceite:**
+
 - ✅ Upload funcionando para todos os tipos
 - ✅ Interface intuitiva
 - ✅ Feedback visual do progresso
@@ -220,14 +248,16 @@ Implementar sistema de upload e processamento de documentos para a base de conhe
 ---
 
 ### **TAREFA 2.5: Sistema RAG - Processamento**
+
 **Estimativa:** 10 horas  
 **Prioridade:** Média  
-**Dependências:** TAREFA 2.4  
+**Dependências:** TAREFA 2.4
 
 **Descrição:**
 Implementar processamento de documentos e geração de embeddings.
 
 **Subtarefas:**
+
 - [ ] Extração de texto dos documentos
 - [ ] Divisão em chunks otimizados
 - [ ] Geração de embeddings
@@ -236,6 +266,7 @@ Implementar processamento de documentos e geração de embeddings.
 - [ ] Interface de gerenciamento
 
 **Critérios de Aceite:**
+
 - ✅ Processamento automático funcionando
 - ✅ Busca semântica implementada
 - ✅ Performance otimizada
@@ -243,14 +274,16 @@ Implementar processamento de documentos e geração de embeddings.
 ---
 
 ### **TAREFA 2.6: Integração WhatsApp**
+
 **Estimativa:** 14 horas  
 **Prioridade:** Média  
-**Dependências:** TAREFA 2.5  
+**Dependências:** TAREFA 2.5
 
 **Descrição:**
 Implementar integração completa com WhatsApp Business API.
 
 **Subtarefas:**
+
 - [ ] Configurar WhatsApp Business API
 - [ ] Implementar webhook para receber mensagens
 - [ ] Sistema de envio de mensagens
@@ -259,6 +292,7 @@ Implementar integração completa com WhatsApp Business API.
 - [ ] Automação de respostas
 
 **Critérios de Aceite:**
+
 - ✅ Recebimento e envio de mensagens
 - ✅ Integração com chat funcionando
 - ✅ Automação básica implementada
@@ -267,17 +301,18 @@ Implementar integração completa com WhatsApp Business API.
 
 ## 📊 Resumo de Estimativas
 
-| Sprint | Funcionalidade | Horas | Prioridade |
-|--------|----------------|-------|------------|
-| 1 | Chat com Agentes | 40h | Crítica |
-| 2 | Cashflow | 32h | Crítica |
-| 2 | Base de Conhecimento | 18h | Média |
-| 2 | WhatsApp | 14h | Média |
-| **TOTAL** | | **104h** | |
+| Sprint    | Funcionalidade       | Horas    | Prioridade |
+| --------- | -------------------- | -------- | ---------- |
+| 1         | Chat com Agentes     | 40h      | Crítica    |
+| 2         | Cashflow             | 32h      | Crítica    |
+| 2         | Base de Conhecimento | 18h      | Média      |
+| 2         | WhatsApp             | 14h      | Média      |
+| **TOTAL** |                      | **104h** |            |
 
 ## 🎯 Próxima Ação Imediata
 
 **HOJE (28/09):** Iniciar TAREFA 1.1 - Configurar WebSocket
+
 - Instalar Socket.io
 - Configurar servidor
 - Testar conexão básica

@@ -7,16 +7,18 @@
 **Data de Início:** 28 de Setembro de 2025  
 **Prazo Final:** 1ª semana de Outubro de 2025  
 **Duração Total:** ~2 semanas  
-**Metodologia:** Sprints de 1 semana  
+**Metodologia:** Sprints de 1 semana
 
 ---
 
 ## 🎯 Visão Geral do Roadmap
 
 ### **Objetivo Principal**
+
 Implementar as 4 funcionalidades core do FalaChefe: Chat com Agentes IA, Gestão de Cashflow, Base de Conhecimento RAG e Integração WhatsApp.
 
 ### **Cronograma Geral**
+
 ```
 Semana 1 (28/09 - 04/10): Chat com Agentes + Início Cashflow
 Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
@@ -27,9 +29,10 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ## 📋 Backlog Detalhado
 
 ### **🔥 PRIORIDADE 1: Sistema de Chat com Agentes IA**
+
 **Sprint:** Semana 1 (28/09 - 04/10)  
 **Responsável:** Tiago Yoko  
-**Estimativa Total:** 32-40 horas  
+**Estimativa Total:** 32-40 horas
 
 #### **Tarefas:**
 
@@ -67,9 +70,10 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ---
 
 ### **💰 PRIORIDADE 2: Gestão de Cashflow**
+
 **Sprint:** Semana 1-2 (28/09 - 11/10)  
 **Responsável:** Tiago Yoko  
-**Estimativa Total:** 40-48 horas  
+**Estimativa Total:** 40-48 horas
 
 #### **Tarefas:**
 
@@ -106,9 +110,10 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ---
 
 ### **🧠 PRIORIDADE 3: Base de Conhecimento RAG**
+
 **Sprint:** Semana 2 (05/10 - 11/10)  
 **Responsável:** Tiago Yoko  
-**Estimativa Total:** 24-32 horas  
+**Estimativa Total:** 24-32 horas
 
 #### **Tarefas:**
 
@@ -139,9 +144,10 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ---
 
 ### **📱 PRIORIDADE 4: Integração WhatsApp**
+
 **Sprint:** Semana 2 (05/10 - 11/10)  
 **Responsável:** Tiago Yoko  
-**Estimativa Total:** 20-28 horas  
+**Estimativa Total:** 20-28 horas
 
 #### **Tarefas:**
 
@@ -174,50 +180,58 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ## 📅 Cronograma Detalhado
 
 ### **Semana 1: 28/09 - 04/10**
+
 **Foco:** Chat com Agentes + Início Cashflow
 
-| Dia | Tarefas Principais | Horas Estimadas |
-|-----|-------------------|-----------------|
-| Seg 28/09 | WebSocket + Componentes Chat | 8h |
-| Ter 29/09 | Integração Agentes + Histórico | 8h |
-| Qua 30/09 | Funcionalidades Avançadas Chat | 8h |
-| Qui 01/10 | Dashboard Cashflow | 8h |
-| Sex 02/10 | Formulários Transações | 8h |
+| Dia       | Tarefas Principais             | Horas Estimadas |
+| --------- | ------------------------------ | --------------- |
+| Seg 28/09 | WebSocket + Componentes Chat   | 8h              |
+| Ter 29/09 | Integração Agentes + Histórico | 8h              |
+| Qua 30/09 | Funcionalidades Avançadas Chat | 8h              |
+| Qui 01/10 | Dashboard Cashflow             | 8h              |
+| Sex 02/10 | Formulários Transações         | 8h              |
 
 ### **Semana 2: 05/10 - 11/10**
+
 **Foco:** Finalizar Cashflow + RAG + WhatsApp
 
-| Dia | Tarefas Principais | Horas Estimadas |
-|-----|-------------------|-----------------|
-| Seg 05/10 | Gráficos e Relatórios | 8h |
-| Ter 06/10 | Sistema RAG - Upload | 8h |
-| Qua 07/10 | Sistema RAG - Processamento | 8h |
-| Qui 08/10 | WhatsApp - Configuração | 8h |
-| Sex 09/10 | WhatsApp - Integração | 8h |
+| Dia       | Tarefas Principais          | Horas Estimadas |
+| --------- | --------------------------- | --------------- |
+| Seg 05/10 | Gráficos e Relatórios       | 8h              |
+| Ter 06/10 | Sistema RAG - Upload        | 8h              |
+| Qua 07/10 | Sistema RAG - Processamento | 8h              |
+| Qui 08/10 | WhatsApp - Configuração     | 8h              |
+| Sex 09/10 | WhatsApp - Integração       | 8h              |
 
 ---
 
 ## 🎯 Marcos (Milestones)
 
-### **Marco 1: Chat Funcional** 
+### **Marco 1: Chat Funcional**
+
 **Data:** 02/10/2025  
 **Entregáveis:**
+
 - ✅ Chat em tempo real funcionando
 - ✅ Integração com 3 agentes IA
 - ✅ Histórico de conversas
 - ✅ Interface responsiva
 
 ### **Marco 2: Cashflow Básico**
+
 **Data:** 06/10/2025  
 **Entregáveis:**
+
 - ✅ Dashboard financeiro
 - ✅ Entrada de transações
 - ✅ Gráficos básicos
 - ✅ Categorias funcionando
 
 ### **Marco 3: Sistema Completo**
+
 **Data:** 11/10/2025  
 **Entregáveis:**
+
 - ✅ Base de conhecimento RAG
 - ✅ Integração WhatsApp
 - ✅ Relatórios e exportação
@@ -228,24 +242,28 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ## 📊 Métricas de Sucesso
 
 ### **Chat com Agentes:**
+
 - [ ] Resposta em tempo real (< 2s)
 - [ ] 99% de uptime
 - [ ] Suporte a 3 agentes simultâneos
 - [ ] Interface intuitiva
 
 ### **Gestão de Cashflow:**
+
 - [ ] Entrada de transações em < 30s
 - [ ] Gráficos responsivos
 - [ ] Relatórios exportáveis
 - [ ] Integração com categorias do onboarding
 
 ### **Base de Conhecimento:**
+
 - [ ] Upload de documentos funcionando
 - [ ] Busca semântica implementada
 - [ ] Integração com agentes IA
 - [ ] Interface de gerenciamento
 
 ### **WhatsApp:**
+
 - [ ] Recebimento de mensagens
 - [ ] Envio de mensagens
 - [ ] Integração com chat interno
@@ -256,15 +274,19 @@ Semana 2 (05/10 - 11/10): Finalizar Cashflow + Base de Conhecimento + WhatsApp
 ## 🚨 Riscos e Mitigações
 
 ### **Risco 1: Complexidade do WebSocket**
+
 **Mitigação:** Usar biblioteca testada (Socket.io) e implementar fallbacks
 
 ### **Risco 2: Performance dos Gráficos**
+
 **Mitigação:** Usar bibliotecas otimizadas (Chart.js, Recharts) e lazy loading
 
 ### **Risco 3: Integração WhatsApp**
+
 **Mitigação:** Começar com sandbox, testar extensivamente antes de produção
 
 ### **Risco 4: Processamento RAG**
+
 **Mitigação:** Implementar processamento assíncrono e cache
 
 ---

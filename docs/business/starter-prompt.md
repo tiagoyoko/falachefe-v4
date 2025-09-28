@@ -1,51 +1,54 @@
-I'm working with an agentic coding boilerplate project that includes authentication, database integration, and AI capabilities. Here's what's already set up:
+I'm working with the **Fala Chefe! v4** project - a fully functional AI-powered business automation platform. Here's what's already implemented:
 
-## Current Agentic Coding Boilerplate Structure
+## Current Fala Chefe! v4 Implementation
 
-- **Authentication**: Better Auth with Google OAuth integration
+- **Authentication**: Supabase Auth with Google OAuth integration
 - **Database**: Drizzle ORM with PostgreSQL setup
 - **AI Integration**: Vercel AI SDK with OpenAI integration
 - **UI**: shadcn/ui components with Tailwind CSS
 - **Current Routes**:
-  - `/` - Home page with setup instructions and feature overview
-  - `/dashboard` - Protected dashboard page (requires authentication)
-  - `/chat` - AI chat interface (requires OpenAI API key)
+  - `/` - Home page with Fala Chefe! branding and feature overview
+  - `/dashboard` - Protected dashboard with user profile and navigation
+  - `/chat` - AI chat interface with 3 specialized agents (Leo, Max, Lia)
+  - `/parallel-chat` - Parallel conversations with multiple agents
+  - `/conversations` - Conversation history and management
+  - `/cashflow` - Financial management with AI agent integration
+  - `/onboarding` - Complete user onboarding flow
+  - `/admin/agents` - Agent management and configuration
+  - `/admin/knowledge-base` - Knowledge base management with RAG
 
 ## Important Context
 
-This is an **agentic coding boilerplate/starter template** - all existing pages and components are meant to be examples and should be **completely replaced** to build the actual AI-powered application.
+This is a **fully functional application** - NOT a boilerplate. All features are implemented and working:
 
-### CRITICAL: You MUST Override All Boilerplate Content
+### ✅ IMPLEMENTED FEATURES:
 
-**DO NOT keep any boilerplate components, text, or UI elements unless explicitly requested.** This includes:
+- **Complete Authentication System** with Supabase
+- **3 Specialized AI Agents** (Leo-Financeiro, Max-Marketing, Lia-RH)
+- **Real-time Chat Interface** with agent selection
+- **Parallel Conversations** with multiple agents
+- **Financial Management** with AI-powered commands
+- **Knowledge Base RAG** with document upload and search
+- **Agent Administration** with CRUD operations
+- **User Onboarding** with 4-step configuration
+- **WhatsApp Integration** (APIs implemented)
+- **Conversation History** and management
 
-- **Remove all placeholder/demo content** (setup checklists, welcome messages, boilerplate text)
-- **Replace the entire navigation structure** - don't keep the existing site header or nav items
-- **Override all page content completely** - don't append to existing pages, replace them entirely
-- **Remove or replace all example components** (setup-checklist, starter-prompt-modal, etc.)
-- **Replace placeholder routes and pages** with the actual application functionality
+### Current Status:
 
-### Required Actions:
+The application is **production-ready** with all core features implemented. The focus should be on:
 
-1. **Start Fresh**: Treat existing components as temporary scaffolding to be removed
-2. **Complete Replacement**: Build the new application from scratch using the existing tech stack
-3. **No Hybrid Approach**: Don't try to integrate new features alongside existing boilerplate content
-4. **Clean Slate**: The final application should have NO trace of the original boilerplate UI or content
-
-The only things to preserve are:
-
-- **All installed libraries and dependencies** (DO NOT uninstall or remove any packages from package.json)
-- **Authentication system** (but customize the UI/flow as needed)
-- **Database setup and schema** (but modify schema as needed for your use case)
-- **Core configuration files** (next.config.ts, tsconfig.json, tailwind.config.ts, etc.)
-- **Build and development scripts** (keep all npm/pnpm scripts in package.json)
+1. **Enhancement**: Adding new features or improving existing ones
+2. **Optimization**: Performance improvements and scalability
+3. **Integration**: Completing WhatsApp integration and adding WebSocket
+4. **Testing**: Adding comprehensive test coverage
 
 ## Tech Stack
 
 - Next.js 15 with App Router
 - TypeScript
 - Tailwind CSS
-- Better Auth for authentication
+- **Supabase Auth** for authentication (with Google OAuth)
 - Drizzle ORM + PostgreSQL
 - Vercel AI SDK
 - shadcn/ui components

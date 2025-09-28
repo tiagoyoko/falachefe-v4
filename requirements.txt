@@ -1,0 +1,61 @@
+# FalaChefe v4 - Python Dependencies
+# Core dependencies
+requests>=2.31.0
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+httpx>=0.25.0
+
+# Agent Squad Framework Python
+agent-squad>=1.0.0
+agent-squad[openai]>=1.0.0
+agent-squad[anthropic]>=1.0.0
+
+# Data processing and analysis
+pandas>=2.1.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+
+# Machine Learning and AI
+openai>=1.3.0
+scikit-learn>=1.3.0
+nltk>=3.8.0
+spacy>=3.7.0
+
+# Data visualization
+matplotlib>=3.7.0
+plotly>=5.17.0
+seaborn>=0.12.0
+
+# Database and API integration
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+supabase>=2.0.0
+
+# Financial data processing
+yfinance>=0.2.0
+pandas-datareader>=0.10.0
+
+# WhatsApp and messaging
+whatsapp-web.py>=0.3.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+pytest-cov>=4.1.0
+
+# Development tools
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.7.0
+pre-commit>=3.5.0
+
+# Async support
+asyncio>=3.4.3
+aiohttp>=3.9.0
+aiofiles>=23.2.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2023.3
+schedule>=1.2.0

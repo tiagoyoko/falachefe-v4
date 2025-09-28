@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O "Fala Chefe!" é uma plataforma de automação de negócios construída com Next.js 15, TypeScript e integração com Better Auth. A arquitetura foi projetada para ser escalável, modular e fácil de manter.
+O "Fala Chefe!" é uma plataforma de automação de negócios construída com Next.js 15, TypeScript e integração com Supabase Auth. A arquitetura foi projetada para ser escalável, modular e fácil de manter.
 
 ## Stack Tecnológico
 
@@ -17,15 +17,16 @@ O "Fala Chefe!" é uma plataforma de automação de negócios construída com Ne
 ### Backend
 
 - **Next.js API Routes** para endpoints
-- **Better Auth** para autenticação
+- **Supabase Auth** para autenticação
 - **Drizzle ORM** para banco de dados
 - **PostgreSQL** como banco principal
 
 ### Integrações
 
-- **Google OAuth** para autenticação
+- **Google OAuth** via Supabase para autenticação
 - **Vercel AI SDK** para processamento de IA
 - **OpenAI** para comandos de linguagem natural
+- **UazAPI** para integração WhatsApp
 
 ## Estrutura de Diretórios
 
@@ -45,7 +46,8 @@ src/
 │   └── ui/               # Componentes de interface
 ├── hooks/                # Custom hooks
 └── lib/                  # Utilitários e configurações
-    ├── auth.ts           # Configuração do Better Auth
+    ├── supabase-client.ts # Cliente Supabase
+    ├── supabase-server.ts # Servidor Supabase
     ├── db.ts             # Configuração do banco
     └── schema.ts         # Schema do Drizzle
 ```
@@ -55,8 +57,8 @@ src/
 ### Schema do Banco
 
 ```sql
--- Usuários (Better Auth)
-user (id, name, email, emailVerified, image)
+-- Usuários (Supabase Auth)
+user (id, name, email, emailVerified, image, created_at, updated_at)
 
 -- Planilhas de fluxo de caixa
 spreadsheets (id, userId, name, googleSheetId, googleSheetUrl, isActive)
@@ -72,6 +74,18 @@ userSettings (id, userId, currency, timezone, whatsappNumber, preferences)
 
 -- Histórico de comandos do agente
 agentCommands (id, userId, command, response, success, metadata)
+
+-- Conversas e sessões de chat
+conversations (id, userId, title, agent, created_at, updated_at)
+
+-- Mensagens do chat
+messages (id, conversationId, role, content, timestamp, metadata)
+
+-- Base de conhecimento
+knowledge_base (id, userId, title, content, type, created_at, updated_at)
+
+-- Agentes configurados
+agents (id, userId, name, type, config, isActive, created_at, updated_at)
 ```
 
 ### Relacionamentos
@@ -81,6 +95,10 @@ agentCommands (id, userId, command, response, success, metadata)
 - **1:N** - Usuário → Transações
 - **1:1** - Usuário → Configurações
 - **1:N** - Usuário → Comandos do Agente
+- **1:N** - Usuário → Conversas
+- **1:N** - Usuário → Base de Conhecimento
+- **1:N** - Usuário → Agentes
+- **1:N** - Conversa → Mensagens
 - **N:1** - Transação → Planilha
 - **N:1** - Transação → Categoria
 

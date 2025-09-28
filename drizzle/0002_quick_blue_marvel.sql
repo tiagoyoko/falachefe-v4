@@ -1,0 +1,1 @@
+ALTER TABLE "conversationMessages" ADD COLUMN "metadata" json;

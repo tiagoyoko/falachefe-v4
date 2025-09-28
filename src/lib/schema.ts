@@ -246,6 +246,7 @@ export const conversationMessages = pgTable("conversationMessages", {
     .references(() => conversationSessions.id, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'user' | 'assistant'
   content: text("content").notNull(),
+  metadata: json("metadata"), // Metadados adicionais da mensagem
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 
