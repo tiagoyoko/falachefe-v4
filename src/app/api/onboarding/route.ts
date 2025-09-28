@@ -9,6 +9,7 @@ import {
 } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { syncUserFromAuth } from "@/lib/user-sync";
 
 // Função para normalizar número de telefone
 function normalizePhoneNumber(phone: string): string {
@@ -38,12 +39,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    // 🔄 SINCRONIZAR USUÁRIO: Garantir que o usuário existe na nossa tabela
+    try {
+      await syncUserFromAuth(user);
+      console.log("✅ Usuário sincronizado com sucesso:", user.email);
+    } catch (syncError) {
+      console.error("❌ Erro ao sincronizar usuário:", syncError);
+      // Continuar mesmo com erro de sincronização
+    }
+
     const body = await request.json();
     const { selectedFeatures, companyInfo, whatsappNumber, categoriesData } =
       body;
 
     // Validar dados obrigatórios
     if (!companyInfo || !selectedFeatures || !categoriesData) {
+      console.error("❌ Dados obrigatórios faltando:", {
+        companyInfo: !!companyInfo,
+        selectedFeatures: !!selectedFeatures,
+        categoriesData: !!categoriesData,
+      });
       return NextResponse.json(
         { error: "Dados obrigatórios faltando" },
         { status: 400 }
@@ -56,6 +71,8 @@ export async function POST(request: NextRequest) {
     const normalizedPhone = normalizePhoneNumber(
       whatsappNumber || companyInfo.phone
     );
+
+    console.log("🔄 Iniciando salvamento do onboarding para usuário:", userId);
 
     // Iniciar transação
     await db.transaction(async (tx) => {
@@ -85,6 +102,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date(),
           })
           .where(eq(companies.userId, userId));
+        console.log("✅ Empresa atualizada");
       } else {
         // Inserir nova empresa
         await tx.insert(companies).values({
@@ -102,6 +120,7 @@ export async function POST(request: NextRequest) {
           cnpj: companyInfo.cnpj || null,
           website: companyInfo.website || null,
         });
+        console.log("✅ Nova empresa criada");
       }
 
       // 2. Verificar se já existem preferências de onboarding
@@ -123,6 +142,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date(),
           })
           .where(eq(onboardingPreferences.userId, userId));
+        console.log("✅ Preferências de onboarding atualizadas");
       } else {
         // Inserir novas preferências
         await tx.insert(onboardingPreferences).values({
@@ -133,6 +153,7 @@ export async function POST(request: NextRequest) {
           currentStep: "completed",
           completedAt: new Date(),
         });
+        console.log("✅ Novas preferências de onboarding criadas");
       }
 
       // 3. Verificar se já existem configurações do usuário
@@ -155,6 +176,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date(),
           })
           .where(eq(userSettings.userId, userId));
+        console.log("✅ Configurações do usuário atualizadas");
       } else {
         // Inserir novas configurações
         await tx.insert(userSettings).values({
@@ -168,6 +190,7 @@ export async function POST(request: NextRequest) {
             onboardingCompleted: true,
           },
         });
+        console.log("✅ Novas configurações do usuário criadas");
       }
 
       // 4. Criar categorias selecionadas
@@ -263,17 +286,23 @@ export async function POST(request: NextRequest) {
       // Inserir todas as categorias de uma vez
       if (categoriesToCreate.length > 0) {
         await tx.insert(categories).values(categoriesToCreate);
+        console.log(`✅ ${categoriesToCreate.length} categorias criadas`);
       }
     });
+
+    console.log("🎉 Onboarding concluído com sucesso para usuário:", userId);
 
     return NextResponse.json({
       success: true,
       message: "Onboarding concluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro no onboarding:", error);
+    console.error("❌ Erro no onboarding:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      {
+        error: "Erro interno do servidor",
+        details: error instanceof Error ? error.message : "Erro desconhecido",
+      },
       { status: 500 }
     );
   }
