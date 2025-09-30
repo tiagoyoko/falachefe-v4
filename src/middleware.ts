@@ -55,8 +55,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/auth/signin", request.url));
     }
 
-    // Se estiver logado e tentar acessar páginas de auth
-    if (user && request.nextUrl.pathname.startsWith("/auth")) {
+    // Se estiver logado e tentar acessar páginas de auth (exceto callback)
+    if (
+      user && 
+      request.nextUrl.pathname.startsWith("/auth") && 
+      !request.nextUrl.pathname.startsWith("/auth/callback")
+    ) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 

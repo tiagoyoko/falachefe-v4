@@ -1,0 +1,180 @@
+---
+description: "Padrões específicos da Vibe Code para uso do ClickUp MCP Server"
+---
+
+# ClickUp Vibe Code Patterns
+
+## 🗂️ Estrutura Organizacional
+
+### Hierarquia Cliente/Projeto
+- **Novo cliente** → criar uma **Folder**
+- **Novo projeto** → criar uma **List** dentro da Folder do cliente
+
+### Estrutura:
+```
+Workspace
+├── Client A (Folder)
+│   ├── Project 1 (List)
+│   ├── Project 2 (List)
+│   └── Project 3 (List)
+└── Client B (Folder)
+    ├── Project X (List)
+    └── Project Y (List)
+```
+
+---
+
+## 📄 Documentos (Parent Type)
+
+### Regra Fundamental: Parent Type por Contexto
+
+#### Docs do Projeto (parent type = 6 - List)
+- PRDs e especificações técnicas
+- Documentação de arquitetura
+- Regras de negócio
+- Memory Bank
+- Guias de desenvolvimento
+
+```typescript
+// Exemplo: Doc técnico do projeto
+{
+  "name": "PRD - Sistema de Leads",
+  "parent": { "id": "list_id", "type": 6 },
+  "visibility": "PRIVATE"
+}
+```
+
+#### Docs do Cliente (parent type = 5 - Folder)
+- Contratos e acordos
+- Propostas comerciais
+- Documentação de onboarding
+- Políticas do cliente
+
+```typescript
+// Exemplo: Contrato do cliente
+{
+  "name": "Contrato - Cliente ABC",
+  "parent": { "id": "folder_id", "type": 5 },
+  "visibility": "PRIVATE"
+}
+```
+
+### Mapa de Parent Types
+```typescript
+const PARENT_TYPES = {
+  SPACE: 4,
+  FOLDER: 5,    // Docs do cliente
+  LIST: 6,      // Docs do projeto
+  EVERYTHING: 7,
+  WORKSPACE: 12
+} as const;
+```
+
+---
+
+## ✅ Criação de Tarefas
+
+### Regras Obrigatórias
+
+#### 1. Custom Item ID
+- **OBRIGATÓRIO** para tipos customizados (Epic, Story, Bug, etc.)
+- Use `null` **APENAS** para tipo padrão "Task"
+- Consulte IDs disponíveis com `get_custom_task_types`
+
+```typescript
+// Correto - Task padrão
+{
+  "name": "Implementar webhook",
+  "custom_item_id": null
+}
+
+// Correto - Epic customizado
+{
+  "name": "Epic: Sistema de Leads",
+  "custom_item_id": 123  // ID do tipo Epic
+}
+```
+
+#### 2. Dependências
+- Use `links_to` com task_id da dependência
+- Formato: array de task IDs
+
+```typescript
+{
+  "name": "Deploy sistema",
+  "links_to": ["task_123", "task_456"],  // Depende dessas tasks
+  "custom_item_id": null
+}
+```
+
+#### 3. Subtarefas
+- Use `parent` com task_id da tarefa pai
+- **Critério**: tarefa pai deve estar na **mesma List**
+
+```typescript
+{
+  "name": "Configurar banco de dados",
+  "parent": "task_789",  // Task pai na mesma List
+  "custom_item_id": null
+}
+```
+
+### Payload Mínimo (Exemplo)
+```typescript
+// POST /list/{list_id}/task
+{
+  "name": "Implementar webhook de leads",
+  "custom_item_id": 123,           // ID tipo customizado
+  "assignees": [987654321],        // User IDs
+  "priority": 3,                   // 1=Urgent, 4=Low
+  "due_date": 1735603200000        // Unix timestamp ms
+}
+```
+
+---
+
+## 🔄 Fluxos Comuns
+
+### Novo Cliente
+1. `create_folder` → Cliente (em Space principal)
+2. `create_list` → Primeiro projeto (na Folder do cliente)
+3. `create_document` → Docs do cliente (parent type 5)
+
+### Novo Projeto
+1. `create_list` → Projeto (na Folder do cliente existente)
+2. `create_document` → Docs do projeto (parent type 6)
+3. `create_task` → Tasks iniciais (com custom_item_id apropriado)
+
+### Epic com Stories
+1. `create_task` → Epic (custom_item_id para Epic)
+2. `create_task` → Story 1 (parent = Epic ID, custom_item_id para Story)
+3. `create_task` → Story 2 (parent = Epic ID, custom_item_id para Story)
+
+---
+
+## ⚠️ Validações Críticas
+
+### Antes de Criar Tasks
+- [ ] Verificar `custom_item_id` apropriado via `get_custom_task_types`
+- [ ] Confirmar que parent task está na mesma List (para subtasks)
+- [ ] Validar que dependências (`links_to`) existem
+
+### Antes de Criar Docs
+- [ ] Confirmar parent type correto (5=Folder cliente, 6=List projeto)
+- [ ] Verificar se parent ID existe e é acessível
+- [ ] Definir visibility apropriada (PUBLIC/PRIVATE)
+
+### Nomenclatura Consistente
+- **Docs do projeto**: `[Tipo] - [Descrição]` (ex: "PRD - Sistema de Leads")
+- **Docs do cliente**: `[Tipo] - [Cliente]` (ex: "Contrato - Empresa ABC")
+- **Tasks**: Verbos no infinitivo (ex: "Implementar", "Configurar", "Testar")
+
+---
+
+## 🎯 Best Practices Vibe Code
+
+1. **Sempre usar nomes descritivos** para folders, lists e tasks
+2. **Documentar dependências** explicitamente via links_to
+3. **Agrupar docs por contexto** (cliente vs projeto) usando parent types corretos
+4. **Manter hierarquia simples**: Cliente → Projeto → Tasks/Docs
+5. **Usar custom_item_id** para tipagem correta de tasks customizadas
