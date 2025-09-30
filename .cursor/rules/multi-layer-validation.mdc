@@ -1,0 +1,235 @@
+# Multi-Layer Validation Rules
+
+## Regra Principal
+**SEMPRE** validar tipos e schemas em todas as camadas antes de qualquer commit ou deploy.
+
+## Quando Aplicar
+- ✅ **SEMPRE**: Antes de commits
+- ✅ **SEMPRE**: Antes de deploys
+- ✅ **SEMPRE**: Durante desenvolvimento
+- ✅ **SEMPRE**: Em CI/CD pipeline
+
+## Validação Multi-Camada
+
+### Frontend (React/Next.js)
+```typescript
+// ✅ SEMPRE use TypeScript strict mode
+"compilerOptions": {
+  "strict": true,
+  "noImplicitAny": true,
+  "strictNullChecks": true,
+  "noImplicitReturns": true
+}
+
+// ✅ SEMPRE valide props de componentes
+interface UserFormProps {
+  user: User;
+  onSubmit: (data: UserFormData) => void;
+}
+
+// ✅ SEMPRE use Zod com React Hook Form
+const userFormSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1)
+});
+```
+
+### Backend (Node.js/Express)
+```typescript
+// ✅ SEMPRE valide requests com middleware Zod
+export const validateRequest = (schema: z.ZodSchema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      req.body = schema.parse(req.body);
+      next();
+    } catch (error) {
+      res.status(400).json({ error: 'Validation failed' });
+    }
+  };
+};
+
+// ✅ SEMPRE use TypeScript strict no backend
+// ✅ SEMPRE valide database schemas
+```
+
+### Database (Drizzle/PostgreSQL)
+```typescript
+// ✅ SEMPRE valide schemas antes de migrations
+export const validateDatabaseSchema = (data: unknown) => {
+  const schema = z.object({
+    id: z.string(),
+    email: z.string().email(),
+    created_at: z.date()
+  });
+  return schema.parse(data);
+};
+
+// ✅ SEMPRE execute migrations com validação
+```
+
+### Integração Cross-Layer
+```typescript
+// ✅ SEMPRE teste consistência entre camadas
+describe('Cross-Layer Validation', () => {
+  it('should validate user from frontend to database', async () => {
+    // Frontend validation
+    const frontendValid = userFormSchema.safeParse(formData);
+    
+    // API validation
+    const apiResponse = await request(app).post('/api/users').send(formData);
+    
+    // Database validation
+    const dbUser = await db.select().from(users);
+    
+    expect(frontendValid.success).toBe(true);
+    expect(apiResponse.status).toBe(201);
+    expect(dbUser[0]).toMatchObject(formData);
+  });
+});
+```
+
+## Scripts de Validação Obrigatórios
+
+```json
+{
+  "scripts": {
+    "validate:all": "npm run validate:frontend && npm run validate:backend && npm run validate:database",
+    "validate:frontend": "npm run type-check && npm run lint",
+    "validate:backend": "npm run type-check && npm run lint",
+    "validate:database": "npm run db:validate-schema",
+    "type-check": "tsc --noEmit --skipLibCheck",
+    "deploy:check": "npm run validate:all && npm run test:integration"
+  }
+}
+```
+
+## Pre-commit Hooks
+
+```bash
+#!/bin/sh
+# .husky/pre-commit
+echo "🔍 Validating Frontend..."
+npm run validate:frontend
+
+echo "🔍 Validating Backend..."
+npm run validate:backend
+
+echo "🔍 Validating Database..."
+npm run validate:database
+
+if [ $? -ne 0 ]; then
+  echo "❌ Multi-layer validation failed"
+  exit 1
+fi
+
+echo "✅ All layers validated successfully"
+```
+
+## Checklist de Deploy
+
+### Frontend
+- [ ] TypeScript compilation (0 errors)
+- [ ] React Hook Form validation
+- [ ] Component prop types
+- [ ] API contract validation
+
+### Backend  
+- [ ] TypeScript compilation (0 errors)
+- [ ] API endpoint validation
+- [ ] Database schema validation
+- [ ] Environment variables
+
+### Database
+- [ ] Migration validation
+- [ ] Schema consistency
+- [ ] Data integrity checks
+
+### Integration
+- [ ] API contract tests
+- [ ] End-to-end validation
+- [ ] Cross-layer consistency
+
+## Ferramentas Obrigatórias
+
+### Frontend
+- TypeScript strict mode
+- Zod validation
+- React Hook Form
+- ESLint
+
+### Backend
+- TypeScript strict mode
+- Zod middleware
+- Express validation
+- Drizzle schema
+
+### Database
+- Drizzle migrations
+- PostgreSQL
+- Schema validation
+- Data integrity
+
+### Integration
+- Jest testing
+- Supertest
+- Cross-layer tests
+- Performance monitoring
+
+## Benefícios
+
+1. **Consistência**: Schemas consistentes em todas as camadas
+2. **Confiabilidade**: Deploy sem erros de tipo
+3. **Produtividade**: Desenvolvimento mais rápido
+4. **Manutenibilidade**: Código mais limpo e organizado
+5. **Reutilização**: Processo aplicável a futuros projetos
+
+## Exemplos de Implementação
+
+### Validação Frontend
+```typescript
+// src/components/forms/UserForm.tsx
+import { useUserForm } from '@/lib/validation/frontend';
+
+export const UserForm = () => {
+  const { register, handleSubmit, formState: { errors } } = useUserForm();
+  
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input 
+        {...register('email')} 
+        type="email"
+        className={errors.email ? 'border-red-500' : 'border-gray-300'}
+      />
+      {errors.email && <span className="text-red-500">{errors.email.message}</span>}
+    </form>
+  );
+};
+```
+
+### Validação Backend
+```typescript
+// src/lib/validation/backend.ts
+export const validateUserRequest = validateRequest(userSchema);
+
+// src/app/api/users/route.ts
+export async function POST(req: Request) {
+  const validatedData = await validateUserRequest(req);
+  // ... resto da lógica
+}
+```
+
+### Validação Database
+```typescript
+// src/lib/validation/database.ts
+export const validateDatabaseUser = (data: unknown) => {
+  return userSchema.parse(data);
+};
+
+// Antes de inserir no banco
+const validatedUser = validateDatabaseUser(userData);
+await db.insert(users).values(validatedUser);
+```
+
+---
+
+**Lembre-se**: A validação multi-camada garante consistência, confiabilidade e produtividade em todos os projetos!

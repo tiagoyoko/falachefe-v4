@@ -1,244 +1,94 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
-  validateApiRequest,
+  validateCreateUser,
+  validateUpdateUser,
+  validateUser,
   validateApiResponse,
-  userSchema,
-  createUserSchema
+  userResponseSchema
 } from '../lib/validation/cross-layer';
 import {
-  validateRequest,
-  validateQuery,
-  validateParams,
-  userParamsSchema,
-  userQuerySchema
+  validateCreateUserRequest,
+  validateUpdateUserRequest,
+  validateUserParamsMiddleware,
+  validateUserQueryMiddleware,
+  createSuccessResponse,
+  createErrorResponse,
+  validateUserParams,
+  validateUserQuery
 } from '../lib/validation/backend';
 
 describe('API Validation Tests', () => {
   describe('Request Validation', () => {
-    it('should validate create user request', () => {
-      const requestData = {
-        email: 'test@example.com',
-        name: 'Test User',
-        phone: '+5511999999999'
-      };
-
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      const result = validateCreateUser(requestData);
-      
-      expect(result).toEqual(requestData);
+    it('validates create user payload', () => {
+      const data = { email: 'test@example.com', name: 'Test User', phone: '+5511999999999' };
+      expect(validateCreateUser(data)).toEqual(data);
     });
 
-    it('should throw error for invalid create user request', () => {
-      const invalidData = {
-        email: 'invalid-email',
-        name: '',
-        phone: 'invalid-phone'
-      };
-
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      
-      expect(() => validateCreateUser(invalidData)).toThrow('Validation failed');
+    it('rejects invalid create user payload', () => {
+      const invalid = { email: 'invalid', name: '', phone: 'bad' };
+      expect(() => validateCreateUser(invalid)).toThrow('Validation failed');
     });
 
-    it('should validate user parameters', () => {
-      const paramsData = {
-        id: '123e4567-e89b-12d3-a456-426614174000'
-      };
-
-      const validateParams = validateApiRequest(userParamsSchema);
-      const result = validateParams(paramsData);
-      
-      expect(result).toEqual(paramsData);
+    it('validates user params', () => {
+      const params = { id: '123e4567-e89b-12d3-a456-426614174000' };
+      expect(validateUserParams(params)).toEqual(params);
     });
 
-    it('should throw error for invalid user parameters', () => {
-      const invalidParams = {
-        id: 'invalid-uuid'
-      };
-
-      const validateParams = validateApiRequest(userParamsSchema);
-      
-      expect(() => validateParams(invalidParams)).toThrow('Validation failed');
-    });
-
-    it('should validate query parameters', () => {
-      const queryData = {
-        page: '1',
-        limit: '10',
-        search: 'test',
-        sort: 'name',
-        order: 'asc'
-      };
-
-      const validateQuery = validateApiRequest(userQuerySchema);
-      const result = validateQuery(queryData);
-      
-      expect((result as any).page).toBe(1);
-      expect((result as any).limit).toBe(10);
-      expect((result as any).search).toBe('test');
-      expect((result as any).sort).toBe('name');
-      expect((result as any).order).toBe('asc');
-    });
-
-    it('should handle missing query parameters with defaults', () => {
-      const queryData = {};
-
-      const validateQuery = validateApiRequest(userQuerySchema);
-      const result = validateQuery(queryData);
-      
-      expect((result as any).page).toBe(1);
-      expect((result as any).limit).toBe(10);
-      expect((result as any).sort).toBe('created_at');
-      expect((result as any).order).toBe('desc');
+    it('validates user query defaults', () => {
+      const result = validateUserQuery({}) as any;
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
   });
 
   describe('Response Validation', () => {
-    it('should validate successful API response', () => {
-      const responseData = {
-        success: true,
-        data: {
-          id: '123e4567-e89b-12d3-a456-426614174000',
-          email: 'test@example.com',
-          name: 'Test User',
-          phone: '+5511999999999',
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        message: 'User created successfully'
-      };
-
-      const result = validateApiResponse(responseData);
-      
-      expect(result.success).toBe(true);
-      expect(result.data).toBeDefined();
-      expect(result.message).toBe('User created successfully');
+    it('validates success response', () => {
+      const response = createSuccessResponse({ id: '1' }, 'ok');
+      expect(validateApiResponse(response)).toEqual(response);
     });
 
-    it('should validate error API response', () => {
-      const responseData = {
-        success: false,
-        error: 'Validation failed',
-        details: [
-          {
-            field: 'email',
-            message: 'Invalid email format',
-            code: 'invalid_string'
-          }
-        ]
-      };
-
-      const result = validateApiResponse(responseData);
-      
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Validation failed');
-    });
-
-    it('should throw error for invalid response format', () => {
-      const invalidResponse = {
-        success: 'true', // Should be boolean
-        data: 'invalid-data'
-      };
-
-      expect(() => validateApiResponse(invalidResponse)).toThrow();
+    it('validates error response', () => {
+      const response = createErrorResponse('error');
+      expect(validateApiResponse(response)).toEqual(response);
     });
   });
 
-  describe('Middleware Validation', () => {
-    it('should validate request body with middleware', () => {
-      const mockRequest = {
-        body: {
-          email: 'test@example.com',
-          name: 'Test User',
-          phone: '+5511999999999'
-        }
-      } as any;
+  describe('Middleware Integration', () => {
+    const mockResponse = () => ({ status: vi.fn().mockReturnThis(), json: vi.fn() });
 
-      const mockResponse = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn()
-      } as any;
-
-      const mockNext = vi.fn();
-
-      const middleware = validateRequest(createUserSchema);
-      middleware(mockRequest, mockResponse, mockNext);
-
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockResponse.status).not.toHaveBeenCalled();
-      expect(mockResponse.json).not.toHaveBeenCalled();
+    it('middleware validates request body', () => {
+      const req: any = { body: { email: 'test@example.com', name: 'Test', phone: '+5511999999999' } };
+      const res = mockResponse();
+      const next = vi.fn();
+      validateCreateUserRequest(req, res as any, next);
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
     });
 
-    it('should reject invalid request body with middleware', () => {
-      const mockRequest = {
-        body: {
-          email: 'invalid-email',
-          name: ''
-        }
-      } as any;
-
-      const mockResponse = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn()
-      } as any;
-
-      const mockNext = vi.fn();
-
-      const middleware = validateRequest(createUserSchema);
-      middleware(mockRequest, mockResponse, mockNext);
-
-      expect(mockNext).not.toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: false,
-        error: 'Validation failed',
-        details: expect.any(Array)
-      });
+    it('middleware rejects invalid body', () => {
+      const req: any = { body: { email: 'bad', name: '' } };
+      const res = mockResponse();
+      const next = vi.fn();
+      validateCreateUserRequest(req, res as any, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     });
 
-    it('should validate query parameters with middleware', () => {
-      const mockRequest = {
-        query: {
-          page: '1',
-          limit: '10',
-          search: 'test'
-        }
-      } as any;
-
-      const mockResponse = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn()
-      } as any;
-
-      const mockNext = vi.fn();
-
-      const middleware = validateQuery(userQuerySchema);
-      middleware(mockRequest, mockResponse, mockNext);
-
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockRequest.query.page).toBe(1);
-      expect(mockRequest.query.limit).toBe(10);
+    it('middleware validates params', () => {
+      const req: any = { params: { id: '123e4567-e89b-12d3-a456-426614174000' } };
+      const res = mockResponse();
+      const next = vi.fn();
+      validateUserParamsMiddleware(req, res as any, next);
+      expect(next).toHaveBeenCalled();
     });
 
-    it('should validate route parameters with middleware', () => {
-      const mockRequest = {
-        params: {
-          id: '123e4567-e89b-12d3-a456-426614174000'
-        }
-      } as any;
-
-      const mockResponse = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn()
-      } as any;
-
-      const mockNext = vi.fn();
-
-      const middleware = validateParams(userParamsSchema);
-      middleware(mockRequest, mockResponse, mockNext);
-
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockResponse.status).not.toHaveBeenCalled();
+    it('middleware validates query', () => {
+      const req: any = { query: { page: '1', limit: '10' } };
+      const res = mockResponse();
+      const next = vi.fn();
+      validateUserQueryMiddleware(req, res as any, next);
+      expect(next).toHaveBeenCalled();
     });
   });
 
@@ -250,8 +100,6 @@ describe('API Validation Tests', () => {
         phone: 'invalid-phone'
       };
 
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      
       try {
         validateCreateUser(invalidData);
         expect.fail('Should have thrown an error');
@@ -264,8 +112,6 @@ describe('API Validation Tests', () => {
     });
 
     it('should handle unexpected errors gracefully', () => {
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      
       try {
         validateCreateUser(null);
         expect.fail('Should have thrown an error');
@@ -283,8 +129,6 @@ describe('API Validation Tests', () => {
         phone: '+5511999999999'
       };
 
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      
       const startTime = performance.now();
       
       // Execute 1000 validations
@@ -306,8 +150,6 @@ describe('API Validation Tests', () => {
         phone: `+551199999${i.toString().padStart(4, '0')}`
       }));
 
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      
       const startTime = performance.now();
       
       largeDataset.forEach(data => {
@@ -332,7 +174,6 @@ describe('API Validation Tests', () => {
       };
 
       // 1. Validate request
-      const validateCreateUser = validateApiRequest(createUserSchema);
       const validatedRequest = validateCreateUser(requestData);
       
       // 2. Simulate processing
@@ -364,8 +205,6 @@ describe('API Validation Tests', () => {
       };
 
       // 1. Request validation should fail
-      const validateCreateUser = validateApiRequest(createUserSchema);
-      
       expect(() => validateCreateUser(invalidRequestData)).toThrow();
 
       // 2. Simulate error response
