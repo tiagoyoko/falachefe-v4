@@ -235,6 +235,9 @@ export const conversationSessions = pgTable("conversationSessions", {
     .references(() => user.id, { onDelete: "cascade" }),
   agent: text("agent").notNull(), // 'financeiro' | 'max' | 'geral'
   title: text("title"),
+  chatId: text("chatId"), // WhatsApp integration
+  lastActivity: timestamp("lastActivity").notNull().defaultNow(),
+  isActive: boolean("isActive").notNull().default(true),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
@@ -416,3 +419,59 @@ export const agentKnowledgeAssociations = pgTable(
     createdAt: timestamp("createdAt").notNull().defaultNow(),
   }
 );
+
+// ===== SISTEMA DE MÉTRICAS DE CLASSIFICAÇÃO =====
+
+// Tabela para estatísticas de classificação
+export const classificationStats = pgTable("classificationStats", {
+  id: text("id").primaryKey(),
+  totalClassifications: integer("totalClassifications").notNull().default(0),
+  accuracyRate: decimal("accuracyRate", { precision: 5, scale: 4 }).notNull().default("0"),
+  averageConfidence: decimal("averageConfidence", { precision: 5, scale: 4 }).notNull().default("0"),
+  averageResponseTime: decimal("averageResponseTime", { precision: 10, scale: 3 }).notNull().default("0"),
+  errorRate: decimal("errorRate", { precision: 5, scale: 4 }).notNull().default("0"),
+  cacheHitRate: decimal("cacheHitRate", { precision: 5, scale: 4 }).notNull().default("0"),
+  lastUpdated: timestamp("lastUpdated").notNull().defaultNow(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+// Tabela para resultados individuais de classificação
+export const classificationResults = pgTable("classificationResults", {
+  id: text("id").primaryKey(),
+  query: text("query").notNull(),
+  agentId: text("agentId").notNull(),
+  confidence: decimal("confidence", { precision: 5, scale: 4 }).notNull(),
+  reasoning: json("reasoning").notNull(), // Array de strings com chains de raciocínio
+  responseTime: decimal("responseTime", { precision: 10, scale: 3 }).notNull(),
+  cacheHit: boolean("cacheHit").notNull().default(false),
+  success: boolean("success").notNull().default(true),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+// Tabela para configurações de A/B testing
+export const abTestConfigs = pgTable("abTestConfigs", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("isActive").notNull().default(true),
+  variants: json("variants").notNull(), // Array de configurações de variantes
+  trafficAllocation: json("trafficAllocation").notNull(), // Distribuição de tráfego
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate"),
+  metrics: json("metrics").notNull(), // Métricas a serem coletadas
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+// Tabela para resultados de A/B testing
+export const abTestResults = pgTable("abTestResults", {
+  id: text("id").primaryKey(),
+  testId: text("testId")
+    .notNull()
+    .references(() => abTestConfigs.id, { onDelete: "cascade" }),
+  variant: text("variant").notNull(),
+  userId: text("userId").references(() => user.id, { onDelete: "set null" }),
+  sessionId: text("sessionId"),
+  metrics: json("metrics").notNull(), // Métricas específicas do teste
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});

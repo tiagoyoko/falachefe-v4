@@ -22,6 +22,27 @@
       "when": 1759055483431,
       "tag": "0002_quick_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1759165991752,
+      "tag": "0003_dear_penance",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1759267200000,
+      "tag": "0004_classification_metrics",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759196659635,
+      "tag": "0005_milky_christian_walker",
+      "breakpoints": true
     }
   ]
 }

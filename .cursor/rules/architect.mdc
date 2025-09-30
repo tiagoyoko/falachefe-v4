@@ -1,0 +1,254 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: "Regras para Architect com integração ClickUp MCP Server"
+---
+
+# Architect - ClickUp MCP Integration
+
+## Uso Obrigatório do ClickUp MCP Server
+
+### Criação de Tasks de Arquitetura
+```typescript
+// ✅ SEMPRE criar task de arquitetura no ClickUp
+async function createArchitectureTask(taskData: {
+  name: string;
+  description: string;
+  technicalSpecs: string;
+  architectureDecisions: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  dependencies?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `🏗️ ${taskData.name}`,
+    description: `## Descrição\n${taskData.description}\n\n## Especificações Técnicas\n${taskData.technicalSpecs}\n\n## Decisões de Arquitetura\n${taskData.architectureDecisions.map(decision => `- ${decision}`).join('\n')}`,
+    listName: "Technical Docs",
+    priority: taskData.priority,
+    dueDate: taskData.dueDate,
+    assignees: taskData.assignees,
+    dependencies: taskData.dependencies,
+    tags: ["architecture", "technical", "design"]
+  });
+  
+  return task;
+}
+
+// ✅ SEMPRE criar subtasks técnicas
+async function createTechnicalSubtasks(parentTaskId: string, subtasks: {
+  name: string;
+  description: string;
+  technicalDetails: string;
+  estimatedHours: number;
+  dependencies?: string[];
+}[]) {
+  const createdSubtasks = [];
+  
+  for (const subtask of subtasks) {
+    const dueDate = new Date(Date.now() + subtask.estimatedHours * 60 * 60 * 1000).toISOString();
+    
+    const created = await mcp_clickup-mcp-server_create_task({
+      name: `🔧 ${subtask.name}`,
+      description: `## Descrição\n${subtask.description}\n\n## Detalhes Técnicos\n${subtask.technicalDetails}\n\n## Estimativa\n${subtask.estimatedHours} horas`,
+      parent: parentTaskId,
+      listName: "Technical Docs",
+      priority: 3,
+      dueDate,
+      dependencies: subtask.dependencies,
+      tags: ["subtask", "technical", "implementation"]
+    });
+    
+    createdSubtasks.push(created);
+  }
+  
+  return createdSubtasks;
+}
+```
+
+### Gestão de Decisões de Arquitetura
+```typescript
+// ✅ SEMPRE criar ADR (Architecture Decision Record)
+async function createADR(adrData: {
+  title: string;
+  status: 'proposed' | 'accepted' | 'deprecated' | 'superseded';
+  context: string;
+  decision: string;
+  consequences: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const adr = await mcp_clickup-mcp-server_create_task({
+    name: `📋 ADR: ${adrData.title}`,
+    description: `## Status\n${adrData.status}\n\n## Contexto\n${adrData.context}\n\n## Decisão\n${adrData.decision}\n\n## Consequências\n${adrData.consequences.map(consequence => `- ${consequence}`).join('\n')}`,
+    listName: "Technical Docs",
+    priority: adrData.priority,
+    dueDate: adrData.dueDate,
+    assignees: adrData.assignees,
+    tags: ["adr", "architecture", "decision"]
+  });
+  
+  return adr;
+}
+
+// ✅ SEMPRE criar task de refatoração
+async function createRefactoringTask(refactoringData: {
+  name: string;
+  description: string;
+  currentArchitecture: string;
+  targetArchitecture: string;
+  migrationPlan: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `🔄 Refatoração: ${refactoringData.name}`,
+    description: `## Descrição\n${refactoringData.description}\n\n## Arquitetura Atual\n${refactoringData.currentArchitecture}\n\n## Arquitetura Alvo\n${refactoringData.targetArchitecture}\n\n## Plano de Migração\n${refactoringData.migrationPlan.map(step => `1. ${step}`).join('\n')}`,
+    listName: "Technical Docs",
+    priority: refactoringData.priority,
+    dueDate: refactoringData.dueDate,
+    assignees: refactoringData.assignees,
+    tags: ["refactoring", "architecture", "migration"]
+  });
+  
+  return task;
+}
+```
+
+### Documentação Técnica
+```typescript
+// ✅ SEMPRE criar documentação de arquitetura no ClickUp
+async function createArchitectureDocument(documentData: {
+  name: string;
+  content: string;
+  type: 'architecture' | 'api-spec' | 'system-design' | 'technical-requirements';
+}) {
+  const document = await mcp_clickup-mcp-server_create_document({
+    name: `🏗️ ${documentData.type.toUpperCase()}: ${documentData.name}`,
+    parent: { id: "901413034981", type: 6 },
+    visibility: "PRIVATE",
+    create_page: true
+  });
+  
+  // Atualizar conteúdo
+  const pages = await mcp_clickup-mcp-server_list_document_pages({
+    documentId: document.id
+  });
+  
+  if (pages.pages?.[0]) {
+    await mcp_clickup-mcp-server_update_document_page({
+      documentId: document.id,
+      pageId: pages.pages[0].id,
+      content: documentData.content,
+      content_format: "text/md",
+      content_edit_mode: "replace"
+    });
+  }
+  
+  return document;
+}
+```
+
+### Gestão de Dependências
+```typescript
+// ✅ SEMPRE criar task de dependência
+async function createDependencyTask(dependencyData: {
+  name: string;
+  description: string;
+  dependencyType: 'internal' | 'external' | 'third-party';
+  impact: string;
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `🔗 Dependência: ${dependencyData.name}`,
+    description: `## Descrição\n${dependencyData.description}\n\n## Tipo de Dependência\n${dependencyData.dependencyType}\n\n## Impacto\n${dependencyData.impact}`,
+    listName: "Technical Docs",
+    priority: dependencyData.priority,
+    dueDate: dependencyData.dueDate,
+    assignees: dependencyData.assignees,
+    tags: ["dependency", "technical", dependencyData.dependencyType]
+  });
+  
+  return task;
+}
+```
+
+## Campos Obrigatórios ClickUp
+
+### Architecture Task Fields
+- **name**: Título técnico com ícone
+- **description**: Descrição detalhada em markdown
+- **listName**: "Technical Docs"
+- **priority**: 1=Urgent, 2=High, 3=Normal, 4=Low
+- **dueDate**: Data de vencimento baseada na complexidade
+- **assignees**: Array de IDs de arquitetos/desenvolvedores
+- **dependencies**: Array de IDs de tasks dependentes
+- **tags**: Array de tags técnicas
+
+### ADR Fields
+- **name**: Título do ADR com ícone
+- **description**: ADR completo em markdown
+- **listName**: "Technical Docs"
+- **priority**: Baseada na criticidade da decisão
+- **dueDate**: Data de vencimento do ADR
+- **dependencies**: Array de IDs de ADRs dependentes
+- **tags**: Array de tags de arquitetura
+
+### Document Fields
+- **name**: Nome técnico com ícone e tipo
+- **parent**: Technical Docs List
+- **visibility**: "PRIVATE" para documentação interna
+- **content**: Conteúdo técnico em markdown
+
+## Exemplos de Uso
+
+### Criar Task de Arquitetura
+```typescript
+await createArchitectureTask({
+  name: "Sistema de Autenticação JWT",
+  description: "Projetar arquitetura para sistema de autenticação usando JWT",
+  technicalSpecs: "JWT com refresh tokens, middleware de validação, integração com Supabase Auth",
+  architectureDecisions: [
+    "Usar JWT para stateless authentication",
+    "Implementar refresh token para segurança",
+    "Middleware centralizado para validação"
+  ],
+  priority: 1,
+  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["arch123"]
+});
+```
+
+### Criar ADR
+```typescript
+await createADR({
+  title: "JWT vs Session-based Authentication",
+  status: 'accepted',
+  context: "Necessidade de autenticação stateless para API",
+  decision: "Usar JWT com refresh tokens",
+  consequences: [
+    "Melhor escalabilidade",
+    "Redução de dependência do servidor",
+    "Maior complexidade na implementação"
+  ],
+  priority: 1,
+  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["arch123"]
+});
+```
+
+### Criar Documentação de Arquitetura
+```typescript
+await createArchitectureDocument({
+  name: "Sistema de Autenticação - Arquitetura",
+  content: "# Arquitetura do Sistema de Autenticação\n\n## Visão Geral\n...",
+  type: 'architecture'
+});
+```
+
+---
+
+**Lembre-se**: Como Architect, sempre use ClickUp MCP para criar tasks de arquitetura, ADRs e documentação técnica com foco na qualidade e consistência!

@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { getSession } from "@/lib/auth-server";
 import React from "react";
 
 interface ConversationMessage {
@@ -50,8 +51,8 @@ export default async function ConversationsPage({
 }: {
   searchParams?: Promise<{ agent?: string; page?: string }>;
 }) {
-  // const session = await getSession(); // TODO: Implementar getSession
-  const userId = "placeholder-user-id"; // TODO: Implementar obtenção real do user ID
+  const session = await getSession();
+  const userId = session?.user?.id;
 
   if (!userId) {
     return (

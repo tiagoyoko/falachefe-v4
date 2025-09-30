@@ -50,15 +50,15 @@ interface CashflowSummary {
 }
 
 export default function CashflowPage() {
-  const {} = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [summary, setSummary] = useState<CashflowSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [agentCommand, setAgentCommand] = useState("");
   const [agentResponse, setAgentResponse] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Usar o ID do usuário autenticado (placeholder)
-  const userId = "placeholder-user-id"; // TODO: Implementar obtenção real do user ID
+  // Usar o ID do usuário autenticado do Supabase
+  const userId = user?.id;
 
   const fetchCashflowSummary = useCallback(async () => {
     try {
@@ -77,13 +77,13 @@ export default function CashflowPage() {
   }, [userId]);
 
   useEffect(() => {
-    if (userId) {
+    if (userId && !authLoading) {
       fetchCashflowSummary();
     }
-  }, [userId, fetchCashflowSummary]);
+  }, [userId, authLoading, fetchCashflowSummary]);
 
   const processAgentCommand = async () => {
-    if (!agentCommand.trim()) return;
+    if (!agentCommand.trim() || !userId) return;
 
     try {
       setIsProcessing(true);

@@ -1,0 +1,245 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: "Regras para Product Manager com integração ClickUp MCP Server"
+---
+
+# Product Manager - ClickUp MCP Integration
+
+## Uso Obrigatório do ClickUp MCP Server
+
+### Criação de Roadmap e Estratégia
+```typescript
+// ✅ SEMPRE criar roadmap no ClickUp
+async function createRoadmapInClickUp(roadmapData: {
+  name: string;
+  description: string;
+  strategicGoals: string[];
+  timeline: string;
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  dependencies?: string[];
+}) {
+  const roadmap = await mcp_clickup-mcp-server_create_task({
+    name: `🗺️ Roadmap: ${roadmapData.name}`,
+    description: `## Descrição\n${roadmapData.description}\n\n## Objetivos Estratégicos\n${roadmapData.strategicGoals.map(goal => `- ${goal}`).join('\n')}\n\n## Timeline\n${roadmapData.timeline}`,
+    listName: "Features & Epics",
+    priority: roadmapData.priority,
+    dueDate: roadmapData.dueDate,
+    assignees: roadmapData.assignees,
+    dependencies: roadmapData.dependencies,
+    tags: ["roadmap", "strategy", "product"]
+  });
+  
+  return roadmap;
+}
+
+// ✅ SEMPRE criar feature request
+async function createFeatureRequest(featureData: {
+  name: string;
+  description: string;
+  businessImpact: string;
+  userImpact: string;
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  dependencies?: string[];
+}) {
+  const feature = await mcp_clickup-mcp-server_create_task({
+    name: `🚀 Feature: ${featureData.name}`,
+    description: `## Descrição\n${featureData.description}\n\n## Impacto de Negócio\n${featureData.businessImpact}\n\n## Impacto do Usuário\n${featureData.userImpact}`,
+    listName: "Features & Epics",
+    priority: featureData.priority,
+    dueDate: featureData.dueDate,
+    assignees: featureData.assignees,
+    dependencies: featureData.dependencies,
+    tags: ["feature", "product", "enhancement"]
+  });
+  
+  return feature;
+}
+```
+
+### Gestão de Produto
+```typescript
+// ✅ SEMPRE criar task de análise de mercado
+async function createMarketAnalysisTask(analysisData: {
+  name: string;
+  description: string;
+  marketSegment: string;
+  competitors: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `📊 Análise: ${analysisData.name}`,
+    description: `## Descrição\n${analysisData.description}\n\n## Segmento de Mercado\n${analysisData.marketSegment}\n\n## Concorrentes\n${analysisData.competitors.map(comp => `- ${comp}`).join('\n')}`,
+    listName: "Features & Epics",
+    priority: analysisData.priority,
+    dueDate: analysisData.dueDate,
+    assignees: analysisData.assignees,
+    tags: ["analysis", "market", "research"]
+  });
+  
+  return task;
+}
+
+// ✅ SEMPRE criar task de métricas
+async function createMetricsTask(metricsData: {
+  name: string;
+  description: string;
+  metrics: string[];
+  targetValues: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `📈 Métricas: ${metricsData.name}`,
+    description: `## Descrição\n${metricsData.description}\n\n## Métricas\n${metricsData.metrics.map((metric, index) => `- ${metric}: ${metricsData.targetValues[index]}`).join('\n')}`,
+    listName: "Features & Epics",
+    priority: metricsData.priority,
+    dueDate: metricsData.dueDate,
+    assignees: metricsData.assignees,
+    tags: ["metrics", "kpi", "analytics"]
+  });
+  
+  return task;
+}
+```
+
+### Documentação Estratégica
+```typescript
+// ✅ SEMPRE criar documentação estratégica no ClickUp
+async function createStrategicDocument(documentData: {
+  name: string;
+  content: string;
+  type: 'strategy' | 'market-analysis' | 'product-vision' | 'business-case';
+}) {
+  const document = await mcp_clickup-mcp-server_create_document({
+    name: `📊 ${documentData.type.toUpperCase()}: ${documentData.name}`,
+    parent: { id: "901413034981", type: 6 },
+    visibility: "PRIVATE",
+    create_page: true
+  });
+  
+  // Atualizar conteúdo
+  const pages = await mcp_clickup-mcp-server_list_document_pages({
+    documentId: document.id
+  });
+  
+  if (pages.pages?.[0]) {
+    await mcp_clickup-mcp-server_update_document_page({
+      documentId: document.id,
+      pageId: pages.pages[0].id,
+      content: documentData.content,
+      content_format: "text/md",
+      content_edit_mode: "replace"
+    });
+  }
+  
+  return document;
+}
+```
+
+### Gestão de Stakeholders
+```typescript
+// ✅ SEMPRE criar task para stakeholder
+async function createStakeholderTask(stakeholderData: {
+  name: string;
+  description: string;
+  stakeholder: string;
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `👥 ${stakeholderData.name}`,
+    description: `## Descrição\n${stakeholderData.description}\n\n## Stakeholder\n${stakeholderData.stakeholder}`,
+    listName: "Features & Epics",
+    priority: stakeholderData.priority,
+    dueDate: stakeholderData.dueDate,
+    assignees: stakeholderData.assignees,
+    tags: ["stakeholder", "business"]
+  });
+  
+  return task;
+}
+```
+
+## Campos Obrigatórios ClickUp
+
+### Roadmap Fields
+- **name**: Título do roadmap com ícone
+- **description**: Descrição estratégica em markdown
+- **listName**: "Features & Epics"
+- **priority**: 1=Urgent, 2=High, 3=Normal, 4=Low
+- **dueDate**: Data de vencimento do roadmap
+- **assignees**: Array de IDs de stakeholders
+- **dependencies**: Array de IDs de roadmaps dependentes
+- **tags**: Array de tags estratégicas
+
+### Feature Fields
+- **name**: Título da feature com ícone
+- **description**: Descrição completa em markdown
+- **listName**: "Features & Epics"
+- **priority**: Prioridade baseada no valor estratégico
+- **dueDate**: Data de vencimento da feature
+- **dependencies**: Array de IDs de features dependentes
+- **tags**: Array de tags de produto
+
+### Document Fields
+- **name**: Nome do documento com ícone e tipo
+- **parent**: Technical Docs List
+- **visibility**: "PRIVATE" para documentação interna
+- **content**: Conteúdo estratégico em markdown
+
+## Exemplos de Uso
+
+### Criar Roadmap
+```typescript
+await createRoadmapInClickUp({
+  name: "Q1 2025 - Autenticação e Segurança",
+  description: "Roadmap para implementação de sistema de autenticação e segurança",
+  strategicGoals: [
+    "Melhorar segurança da plataforma",
+    "Reduzir fricção no onboarding",
+    "Aumentar retenção de usuários"
+  ],
+  timeline: "Janeiro - Março 2025",
+  priority: 1,
+  dueDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["pm123"]
+});
+```
+
+### Criar Feature Request
+```typescript
+await createFeatureRequest({
+  name: "Login Social",
+  description: "Implementar login com Google e Facebook",
+  businessImpact: "Reduzir fricção no onboarding em 40%",
+  userImpact: "Usuários podem fazer login mais rapidamente",
+  priority: 2,
+  dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["pm123"]
+});
+```
+
+### Criar Análise de Mercado
+```typescript
+await createMarketAnalysisTask({
+  name: "Análise de Concorrentes - Autenticação",
+  description: "Analisar soluções de autenticação dos principais concorrentes",
+  marketSegment: "SaaS B2B",
+  competitors: ["Auth0", "Firebase Auth", "AWS Cognito"],
+  priority: 2,
+  dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["pm123"]
+});
+```
+
+---
+
+**Lembre-se**: Como PM, sempre use ClickUp MCP para criar roadmaps, features e documentação estratégica com foco no valor do produto!

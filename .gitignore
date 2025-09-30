@@ -74,3 +74,6 @@ coverage/
 
 # Environment variables
 .env.example
+# BMAD (local only)
+# Documentação gerada localmente — deve ser versionada, portanto remover de ignore se necessário
+# (Mantido vazio para evitar adição acidental)

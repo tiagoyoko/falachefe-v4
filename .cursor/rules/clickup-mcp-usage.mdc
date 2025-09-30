@@ -1,0 +1,52 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: "Uso correto do ClickUp MCP Server"
+---
+
+# ClickUp MCP Server - Uso Correto
+
+## Configuração
+- API Key: pk_212588041_E7UZ82BWAOSMDW55PGE3C5VO4SVCRARF
+- Team ID: 9014943826
+- Document Support: true
+
+## Workspace
+- Workspace ID: 9014943826
+- Space: Agencia Vibe Code (90144324000)
+- Technical Docs List: 901413034981
+
+## Operações
+
+### Criar Task
+```typescript
+await mcp_clickup-mcp-server_create_task({
+  name: "Task Name",
+  listName: "Technical Docs",
+  priority: 3
+});
+```
+
+### Criar Documento
+```typescript
+await mcp_clickup-mcp-server_create_document({
+  name: "Document Name",
+  parent: { id: "901413034981", type: 6 },
+  visibility: "PRIVATE",
+  create_page: true
+});
+```
+
+### Atualizar Documento
+```typescript
+await mcp_clickup-mcp-server_update_document_page({
+  documentId: documentId,
+  pageId: pageId,
+  content: content,
+  content_format: "text/md"
+});
+```
+
+## Validação
+- Sempre verificar se recursos existem
+- Implementar tratamento de erros
+- Usar retry para operações críticas

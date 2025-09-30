@@ -1,0 +1,193 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: "Regras para Scrum Master com integração ClickUp MCP Server"
+---
+
+# Scrum Master - ClickUp MCP Integration
+
+## Uso Obrigatório do ClickUp MCP Server
+
+### Criação de Stories e Tasks
+```typescript
+// ✅ SEMPRE criar story no ClickUp com campos completos
+async function createStoryInClickUp(storyData: {
+  name: string;
+  description: string;
+  acceptanceCriteria: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  dependencies?: string[];
+}) {
+  const story = await mcp_clickup-mcp-server_create_task({
+    name: `📖 ${storyData.name}`,
+    description: `## Descrição\n${storyData.description}\n\n## Critérios de Aceitação\n${storyData.acceptanceCriteria.map(ac => `- ${ac}`).join('\n')}`,
+    listName: "Stories",
+    priority: storyData.priority,
+    dueDate: storyData.dueDate,
+    assignees: storyData.assignees,
+    dependencies: storyData.dependencies,
+    tags: ["story", "user-story"]
+  });
+  
+  return story;
+}
+
+// ✅ SEMPRE criar tasks com subtasks
+async function createTaskWithSubtasks(taskData: {
+  name: string;
+  description: string;
+  subtasks: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  dependencies?: string[];
+}) {
+  const mainTask = await mcp_clickup-mcp-server_create_task({
+    name: `✅ ${taskData.name}`,
+    description: taskData.description,
+    listName: "Sprint Backlog",
+    priority: taskData.priority,
+    dueDate: taskData.dueDate,
+    assignees: taskData.assignees,
+    dependencies: taskData.dependencies,
+    tags: ["task", "development"]
+  });
+  
+  // Criar subtasks
+  for (const subtask of taskData.subtasks) {
+    await mcp_clickup-mcp-server_create_task({
+      name: `🔹 ${subtask}`,
+      parent: mainTask.id,
+      listName: "Sprint Backlog",
+      priority: taskData.priority,
+      dueDate: taskData.dueDate,
+      assignees: taskData.assignees
+    });
+  }
+  
+  return mainTask;
+}
+```
+
+### Gestão de Sprint
+```typescript
+// ✅ SEMPRE criar sprint no ClickUp
+async function createSprint(sprintData: {
+  name: string;
+  startDate: string;
+  endDate: string;
+  goals: string[];
+}) {
+  const sprint = await mcp_clickup-mcp-server_create_task({
+    name: `🏃 Sprint: ${sprintData.name}`,
+    description: `## Objetivos do Sprint\n${sprintData.goals.map(goal => `- ${goal}`).join('\n')}`,
+    listName: "Sprint Backlog",
+    priority: 2,
+    dueDate: sprintData.endDate,
+    startDate: sprintData.startDate,
+    tags: ["sprint", "planning"]
+  });
+  
+  return sprint;
+}
+
+// ✅ SEMPRE atualizar status de tasks
+async function updateTaskStatus(taskName: string, status: string) {
+  return await mcp_clickup-mcp-server_update_task({
+    taskName,
+    status
+  });
+}
+```
+
+### Documentação de Processos
+```typescript
+// ✅ SEMPRE criar documentação no ClickUp
+async function createProcessDocument(documentData: {
+  name: string;
+  content: string;
+  processType: string;
+}) {
+  const document = await mcp_clickup-mcp-server_create_document({
+    name: `📋 Processo: ${documentData.name}`,
+    parent: { id: "901413034981", type: 6 },
+    visibility: "PRIVATE",
+    create_page: true
+  });
+  
+  // Atualizar conteúdo
+  const pages = await mcp_clickup-mcp-server_list_document_pages({
+    documentId: document.id
+  });
+  
+  if (pages.pages?.[0]) {
+    await mcp_clickup-mcp-server_update_document_page({
+      documentId: document.id,
+      pageId: pages.pages[0].id,
+      content: documentData.content,
+      content_format: "text/md",
+      content_edit_mode: "replace"
+    });
+  }
+  
+  return document;
+}
+```
+
+## Campos Obrigatórios ClickUp
+
+### Task Fields
+- **name**: Título claro e descritivo
+- **description**: Descrição detalhada em markdown
+- **listName**: Lista apropriada (Stories, Sprint Backlog, etc.)
+- **priority**: 1=Urgent, 2=High, 3=Normal, 4=Low
+- **dueDate**: Data de vencimento (Unix timestamp ou string)
+- **startDate**: Data de início (opcional)
+- **assignees**: Array de IDs de usuários
+- **dependencies**: Array de IDs de tasks dependentes
+- **tags**: Array de tags relevantes
+
+### Document Fields
+- **name**: Nome descritivo com ícone
+- **parent**: ID e tipo do parent (list/folder/space)
+- **visibility**: "PRIVATE" ou "PUBLIC"
+- **create_page**: true para criar página inicial
+
+## Exemplos de Uso
+
+### Criar User Story
+```typescript
+await createStoryInClickUp({
+  name: "Como usuário, quero fazer login",
+  description: "Implementar sistema de autenticação",
+  acceptanceCriteria: [
+    "Usuário pode inserir email e senha",
+    "Sistema valida credenciais",
+    "Usuário é redirecionado após login"
+  ],
+  priority: 2,
+  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["user123"]
+});
+```
+
+### Criar Task com Subtasks
+```typescript
+await createTaskWithSubtasks({
+  name: "Implementar autenticação",
+  description: "Desenvolver sistema completo de login",
+  subtasks: [
+    "Criar formulário de login",
+    "Implementar validação",
+    "Configurar JWT",
+    "Testes unitários"
+  ],
+  priority: 2,
+  dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+});
+```
+
+---
+
+**Lembre-se**: Como SM, sempre use ClickUp MCP para criar e gerenciar stories, tasks e documentação de processos!

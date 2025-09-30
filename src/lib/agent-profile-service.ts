@@ -184,6 +184,9 @@ export class AgentProfileService {
         userId,
         agent: agentName,
         title: `Conversa com ${profile.settings.persona?.displayName || agentName}`,
+        chatId: null,
+        lastActivity: new Date(),
+        isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

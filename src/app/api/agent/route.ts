@@ -131,7 +131,6 @@ export async function POST(request: NextRequest) {
         processingTime: response.processingTime,
         confidence: response.metadata.confidence,
         sessionId: response.metadata.sessionId,
-        sessionInfo: response.metadata.sessionInfo,
       },
     });
   } catch (error) {

@@ -1,0 +1,221 @@
+---
+alwaysApply: true
+description: "Regra para uso obrigatório da função date quando necessário registrar data atual"
+---
+
+# Uso Obrigatório da Função Date
+
+## Regra Principal
+**SEMPRE** use a função `date` quando for necessário registrar a data atual, nunca hardcode datas.
+
+## Quando Aplicar
+- ✅ **SEMPRE**: Ao criar timestamps, logs, registros de data
+- ✅ **SEMPRE**: Ao calcular datas relativas (amanhã, próxima semana, etc.)
+- ✅ **SEMPRE**: Ao registrar eventos, transações, ou qualquer atividade temporal
+- ✅ **SEMPRE**: Ao criar documentos, tasks, ou qualquer item com data
+
+## Implementação Correta
+
+### ✅ CORRETO - Usando função date
+```typescript
+// Timestamp atual
+const now = new Date();
+const timestamp = now.getTime();
+
+// Data de criação
+const createdAt = new Date().toISOString();
+
+// Data de vencimento (3 dias a partir de hoje)
+const dueDate = new Date();
+dueDate.setDate(dueDate.getDate() + 3);
+
+// Log com timestamp
+console.log(`[${new Date().toISOString()}] Operação realizada`);
+
+// Registro de transação
+const transaction = {
+  id: generateId(),
+  amount: 500,
+  date: new Date(),
+  createdAt: new Date().toISOString()
+};
+```
+
+### ✅ CORRETO - Calculando datas relativas
+```typescript
+// Amanhã
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+// Próxima semana
+const nextWeek = new Date();
+nextWeek.setDate(nextWeek.getDate() + 7);
+
+// Final do mês
+const endOfMonth = new Date();
+endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
+
+// Início do próximo mês
+const startOfNextMonth = new Date();
+startOfNextMonth.setMonth(startOfNextMonth.getMonth() + 1, 1);
+```
+
+### ✅ CORRETO - Para ClickUp e APIs
+```typescript
+// ClickUp due date (Unix milliseconds)
+const dueDate = new Date();
+dueDate.setDate(dueDate.getDate() + 3);
+const clickupDueDate = dueDate.getTime();
+
+// API timestamp
+const apiTimestamp = new Date().toISOString();
+
+// Log de progresso
+const progressEntry = {
+  date: new Date().toISOString(),
+  status: 'completed',
+  details: 'Task finished successfully'
+};
+```
+
+## ❌ INCORRETO - Hardcoding datas
+
+### ❌ NUNCA faça isso
+```typescript
+// ❌ ERRADO - Data hardcoded
+const dueDate = '2025-01-31';
+const createdAt = '2025-01-29T10:00:00Z';
+const timestamp = 1735628400000; // Data específica
+
+// ❌ ERRADO - Datas fixas
+const startDate = '2025-01-01';
+const endDate = '2025-12-31';
+```
+
+## Padrões Específicos por Contexto
+
+### 1. Logs e Debugging
+```typescript
+// ✅ SEMPRE use date para logs
+console.log(`[${new Date().toISOString()}] Debug: ${message}`);
+logger.info(`Operation completed at ${new Date().toISOString()}`);
+```
+
+### 2. Banco de Dados
+```typescript
+// ✅ SEMPRE use date para timestamps
+const record = {
+  id: generateId(),
+  data: 'value',
+  createdAt: new Date(),
+  updatedAt: new Date()
+};
+```
+
+### 3. APIs e Webhooks
+```typescript
+// ✅ SEMPRE use date para timestamps de API
+const webhookData = {
+  event: 'user.created',
+  timestamp: new Date().toISOString(),
+  data: userData
+};
+```
+
+### 4. ClickUp e Gestão de Projetos
+```typescript
+// ✅ SEMPRE use date para due dates
+const task = {
+  name: 'Task Name',
+  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 dias
+  startDate: new Date()
+};
+```
+
+### 5. Memory Bank e Documentação
+```typescript
+// ✅ SEMPRE use date para timestamps de documentação
+const memoryEntry = {
+  date: new Date().toISOString(),
+  action: 'Memory Bank updated',
+  details: 'New context added'
+};
+```
+
+## Exceções Permitidas
+
+### ✅ Permitido - Datas de referência históricas
+```typescript
+// ✅ OK - Datas históricas específicas
+const projectStartDate = new Date('2024-01-01'); // Data de início do projeto
+const milestoneDate = new Date('2024-06-15'); // Marco específico
+```
+
+### ✅ Permitido - Constantes de configuração
+```typescript
+// ✅ OK - Constantes de configuração
+const BUSINESS_HOURS_START = 9; // 9h da manhã
+const BUSINESS_HOURS_END = 18; // 6h da tarde
+```
+
+## Verificação e Validação
+
+### Checklist de Verificação
+- [ ] Todas as datas são calculadas dinamicamente?
+- [ ] Nenhuma data está hardcoded?
+- [ ] Timestamps usam `new Date()` ou `Date.now()`?
+- [ ] Datas relativas são calculadas a partir da data atual?
+- [ ] Logs incluem timestamp atual?
+
+### Comandos de Verificação
+```bash
+# Buscar por datas hardcoded (deve retornar vazio)
+grep -r "2025-01-29\|2025-01-30\|2025-01-31" src/
+
+# Buscar por uso correto de date
+grep -r "new Date()\|Date.now()" src/
+```
+
+## Benefícios desta Regra
+
+1. **Consistência**: Todas as datas são sempre atuais
+2. **Manutenibilidade**: Não há necessidade de atualizar datas hardcoded
+3. **Precisão**: Timestamps sempre refletem o momento exato da operação
+4. **Debugging**: Logs com timestamps precisos facilitam debugging
+5. **Auditoria**: Rastreamento temporal preciso de todas as operações
+
+## Exemplos de Aplicação
+
+### Memory Bank Updates
+```typescript
+// ✅ CORRETO
+const progressEntry = {
+  date: new Date().toISOString(),
+  action: 'ClickUp MCP Server configured',
+  status: 'completed'
+};
+```
+
+### Task Creation
+```typescript
+// ✅ CORRETO
+const task = {
+  name: 'Implement feature',
+  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+  createdAt: new Date()
+};
+```
+
+### API Responses
+```typescript
+// ✅ CORRETO
+const response = {
+  success: true,
+  timestamp: new Date().toISOString(),
+  data: result
+};
+```
+
+---
+
+**Lembre-se**: A função `date` é sua aliada para manter o sistema sempre atualizado e preciso. Use-a sempre que precisar de uma data!

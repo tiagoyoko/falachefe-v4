@@ -1,0 +1,239 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: "Regras para Product Owner com integração ClickUp MCP Server"
+---
+
+# Product Owner - ClickUp MCP Integration
+
+## Uso Obrigatório do ClickUp MCP Server
+
+### Criação de Epics
+```typescript
+// ✅ SEMPRE criar epic no ClickUp
+async function createEpicInClickUp(epicData: {
+  name: string;
+  description: string;
+  businessValue: string;
+  acceptanceCriteria: string[];
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  dependencies?: string[];
+}) {
+  const epic = await mcp_clickup-mcp-server_create_task({
+    name: `🎯 Epic: ${epicData.name}`,
+    description: `## Descrição\n${epicData.description}\n\n## Valor de Negócio\n${epicData.businessValue}\n\n## Critérios de Aceitação\n${epicData.acceptanceCriteria.map(ac => `- ${ac}`).join('\n')}`,
+    listName: "Epic Backlog",
+    priority: epicData.priority,
+    dueDate: epicData.dueDate,
+    assignees: epicData.assignees,
+    dependencies: epicData.dependencies,
+    tags: ["epic", "product", "business"]
+  });
+  
+  return epic;
+}
+
+// ✅ SEMPRE criar stories vinculadas ao epic
+async function createStoriesForEpic(epicId: string, stories: {
+  name: string;
+  description: string;
+  userStory: string;
+  acceptanceCriteria: string[];
+  priority: number;
+  dueDate: string;
+  dependencies?: string[];
+}[]) {
+  const createdStories = [];
+  
+  for (const story of stories) {
+    const created = await mcp_clickup-mcp-server_create_task({
+      name: `📖 ${story.name}`,
+      description: `## User Story\n${story.userStory}\n\n## Descrição\n${story.description}\n\n## Critérios de Aceitação\n${story.acceptanceCriteria.map(ac => `- ${ac}`).join('\n')}`,
+      parent: epicId,
+      listName: "Stories",
+      priority: story.priority,
+      dueDate: story.dueDate,
+      dependencies: story.dependencies,
+      tags: ["story", "user-story", "epic"]
+    });
+    
+    createdStories.push(created);
+  }
+  
+  return createdStories;
+}
+```
+
+### Gestão de Backlog
+```typescript
+// ✅ SEMPRE priorizar items no backlog
+async function prioritizeBacklogItem(taskName: string, newPriority: number, reason: string) {
+  const update = await mcp_clickup-mcp-server_update_task({
+    taskName,
+    priority: newPriority
+  });
+  
+  // Adicionar comentário explicando a priorização
+  await mcp_clickup-mcp-server_create_task_comment({
+    taskId: update.id,
+    commentText: `**Priorização Atualizada**: ${newPriority}\n\n**Motivo**: ${reason}`
+  });
+  
+  return update;
+}
+
+// ✅ SEMPRE atualizar status de stories
+async function updateStoryStatus(storyName: string, status: string, businessNotes?: string) {
+  const update = await mcp_clickup-mcp-server_update_task({
+    taskName: storyName,
+    status
+  });
+  
+  if (businessNotes) {
+    await mcp_clickup-mcp-server_create_task_comment({
+      taskId: update.id,
+      commentText: `**Status Update**: ${status}\n\n**Notas de Negócio**: ${businessNotes}`
+    });
+  }
+  
+  return update;
+}
+```
+
+### Documentação de Produto
+```typescript
+// ✅ SEMPRE criar documentação de produto no ClickUp
+async function createProductDocument(documentData: {
+  name: string;
+  content: string;
+  type: 'prd' | 'user-guide' | 'business-requirements' | 'acceptance-criteria';
+}) {
+  const document = await mcp_clickup-mcp-server_create_document({
+    name: `📊 ${documentData.type.toUpperCase()}: ${documentData.name}`,
+    parent: { id: "901413034981", type: 6 },
+    visibility: "PRIVATE",
+    create_page: true
+  });
+  
+  // Atualizar conteúdo
+  const pages = await mcp_clickup-mcp-server_list_document_pages({
+    documentId: document.id
+  });
+  
+  if (pages.pages?.[0]) {
+    await mcp_clickup-mcp-server_update_document_page({
+      documentId: document.id,
+      pageId: pages.pages[0].id,
+      content: documentData.content,
+      content_format: "text/md",
+      content_edit_mode: "replace"
+    });
+  }
+  
+  return document;
+}
+```
+
+### Gestão de Stakeholders
+```typescript
+// ✅ SEMPRE criar task para stakeholder
+async function createStakeholderTask(stakeholderData: {
+  name: string;
+  description: string;
+  stakeholder: string;
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `👥 ${stakeholderData.name}`,
+    description: `## Descrição\n${stakeholderData.description}\n\n## Stakeholder\n${stakeholderData.stakeholder}`,
+    listName: "Features & Epics",
+    priority: stakeholderData.priority,
+    dueDate: stakeholderData.dueDate,
+    assignees: stakeholderData.assignees,
+    tags: ["stakeholder", "business"]
+  });
+  
+  return task;
+}
+```
+
+## Campos Obrigatórios ClickUp
+
+### Epic Fields
+- **name**: Título do epic com ícone
+- **description**: Descrição completa em markdown
+- **listName**: "Epic Backlog"
+- **priority**: 1=Urgent, 2=High, 3=Normal, 4=Low
+- **dueDate**: Data de vencimento do epic
+- **assignees**: Array de IDs de stakeholders
+- **dependencies**: Array de IDs de epics dependentes
+- **tags**: Array de tags de negócio
+
+### Story Fields
+- **name**: Título da story com ícone
+- **description**: User story completa em markdown
+- **parent**: ID do epic pai
+- **listName**: "Stories"
+- **priority**: Prioridade baseada no valor de negócio
+- **dueDate**: Data de vencimento da story
+- **dependencies**: Array de IDs de stories dependentes
+- **tags**: Array de tags de story
+
+### Document Fields
+- **name**: Nome do documento com ícone e tipo
+- **parent**: Technical Docs List
+- **visibility**: "PRIVATE" para documentação interna
+- **content**: Conteúdo de produto em markdown
+
+## Exemplos de Uso
+
+### Criar Epic
+```typescript
+await createEpicInClickUp({
+  name: "Sistema de Autenticação",
+  description: "Implementar sistema completo de autenticação para usuários",
+  businessValue: "Permitir acesso seguro e personalizado dos usuários",
+  acceptanceCriteria: [
+    "Usuários podem fazer login com email/senha",
+    "Sistema suporta Google OAuth",
+    "Sessões são seguras e expiram adequadamente"
+  ],
+  priority: 1,
+  dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["po123"]
+});
+```
+
+### Criar Stories para Epic
+```typescript
+await createStoriesForEpic("epic-123", [
+  {
+    name: "Login com Email/Senha",
+    description: "Implementar autenticação básica",
+    userStory: "Como usuário, quero fazer login com email e senha para acessar minha conta",
+    acceptanceCriteria: [
+      "Usuário pode inserir email e senha",
+      "Sistema valida credenciais",
+      "Usuário é redirecionado após login"
+    ],
+    priority: 1,
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  }
+]);
+```
+
+### Criar Documentação de Produto
+```typescript
+await createProductDocument({
+  name: "PRD - Sistema de Autenticação",
+  content: "# PRD - Sistema de Autenticação\n\n## Objetivo\nImplementar sistema de autenticação seguro...",
+  type: 'prd'
+});
+```
+
+---
+
+**Lembre-se**: Como PO, sempre use ClickUp MCP para criar epics, stories e documentação de produto com foco no valor de negócio!

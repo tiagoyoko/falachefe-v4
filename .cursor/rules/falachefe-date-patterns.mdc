@@ -1,0 +1,184 @@
+---
+globs: *.ts,*.tsx,*.js,*.jsx
+description: "Padrões específicos de uso de data para o projeto FalaChefe v4"
+---
+
+# Padrões de Data - FalaChefe v4
+
+## Padrões Específicos do Projeto
+
+### 1. Memory Bank Updates
+```typescript
+// ✅ SEMPRE use data atual para Memory Bank
+const memoryUpdate = {
+  date: new Date().toISOString(),
+  action: 'Memory Bank updated',
+  details: 'New context added',
+  timestamp: new Date().getTime()
+};
+```
+
+### 2. ClickUp Task Creation
+```typescript
+// ✅ SEMPRE calcule datas para ClickUp
+const task = {
+  name: 'Task Name',
+  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 dias
+  startDate: new Date(),
+  createdAt: new Date().toISOString()
+};
+```
+
+### 3. Agent Squad Logs
+```typescript
+// ✅ SEMPRE use timestamp para logs do Agent Squad
+const agentLog = {
+  timestamp: new Date().toISOString(),
+  agent: 'leo',
+  userId: 'user123',
+  message: 'Transaction processed',
+  metadata: {
+    processedAt: new Date()
+  }
+};
+```
+
+### 4. WhatsApp Message Timestamps
+```typescript
+// ✅ SEMPRE use data atual para mensagens WhatsApp
+const whatsappMessage = {
+  chatId: 'chat123',
+  message: 'Hello',
+  timestamp: new Date().toISOString(),
+  receivedAt: new Date()
+};
+```
+
+### 5. Database Records
+```typescript
+// ✅ SEMPRE use data atual para registros no banco
+const transaction = {
+  id: generateId(),
+  userId: 'user123',
+  amount: 500,
+  type: 'income',
+  date: new Date(),
+  createdAt: new Date(),
+  updatedAt: new Date()
+};
+```
+
+## Padrões de Data por Módulo
+
+### Session Manager
+```typescript
+// ✅ SEMPRE use data atual para sessões
+const session = {
+  id: generateId(),
+  userId: 'user123',
+  agentType: 'leo',
+  status: 'active',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  lastActivity: new Date()
+};
+```
+
+### UAZAPI Service
+```typescript
+// ✅ SEMPRE use timestamp para UAZAPI
+const uazapiRequest = {
+  chatId: 'chat123',
+  message: 'Hello',
+  timestamp: new Date().toISOString(),
+  sentAt: new Date()
+};
+```
+
+### ClickUp MCP Server
+```typescript
+// ✅ SEMPRE use data atual para ClickUp
+const clickupTask = {
+  name: 'Task Name',
+  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+  startDate: new Date(),
+  createdAt: new Date().toISOString()
+};
+```
+
+## Validação de Datas
+
+### Função de Validação
+```typescript
+// ✅ SEMPRE valide datas antes de usar
+function validateDate(date: Date): boolean {
+  return date instanceof Date && !isNaN(date.getTime());
+}
+
+// ✅ SEMPRE use data atual se inválida
+function getCurrentDate(): Date {
+  return new Date();
+}
+```
+
+### Tratamento de Erros
+```typescript
+// ✅ SEMPRE trate erros de data
+try {
+  const dueDate = new Date(userInput);
+  if (!validateDate(dueDate)) {
+    throw new Error('Invalid date');
+  }
+} catch (error) {
+  // Fallback para data atual
+  const dueDate = new Date();
+}
+```
+
+## Exemplos de Uso Incorreto
+
+### ❌ NUNCA faça isso
+```typescript
+// ❌ ERRADO - Datas hardcoded
+const dueDate = '2025-01-31';
+const createdAt = '2025-01-29T10:00:00Z';
+
+// ❌ ERRADO - Timestamps fixos
+const timestamp = 1735628400000;
+
+// ❌ ERRADO - Datas estáticas
+const startDate = '2025-01-01';
+const endDate = '2025-12-31';
+```
+
+## Comandos de Verificação
+
+### Verificar Datas Hardcoded
+```bash
+# Buscar por datas hardcoded (deve retornar vazio)
+grep -r "2025-01-29\|2025-01-30\|2025-01-31" src/
+
+# Buscar por timestamps fixos
+grep -r "1735628400000\|1735714800000" src/
+```
+
+### Verificar Uso Correto
+```bash
+# Buscar por uso correto de date
+grep -r "new Date()\|Date.now()" src/
+
+# Buscar por timestamps dinâmicos
+grep -r "toISOString()\|getTime()" src/
+```
+
+## Benefícios para FalaChefe v4
+
+1. **Consistência Temporal**: Todas as operações têm timestamps precisos
+2. **Debugging Facilitado**: Logs com timestamps exatos
+3. **Auditoria Completa**: Rastreamento temporal de todas as ações
+4. **Manutenibilidade**: Não há necessidade de atualizar datas hardcoded
+5. **Precisão**: Timestamps sempre refletem o momento exato da operação
+
+---
+
+**Lembre-se**: No FalaChefe v4, a precisão temporal é crucial para o funcionamento correto dos agentes e do sistema de lembretes. Use sempre a função `date`!

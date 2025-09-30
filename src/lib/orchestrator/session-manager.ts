@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { conversationSessions, conversationMessages } from "@/lib/schema";
-import { eq, and, desc, gte } from "drizzle-orm";
-import { nanoid } from "nanoid";
+import { eq, and, desc, gte, lt } from "drizzle-orm";
+// import { nanoid } from "nanoid"; // Not used in current implementation
+import { SessionMetricsCollector } from "./session-metrics";
 
 export interface SessionInfo {
   sessionId: string;
@@ -21,7 +22,7 @@ export interface ConversationContext {
     timestamp: Date;
   }>;
   currentTopic?: string;
-  userPreferences?: Record<string, any>;
+  userPreferences?: Record<string, unknown>;
 }
 
 export class SessionManager {
@@ -52,6 +53,9 @@ export class SessionManager {
       userId,
       agent: 'max', // Default agent
       title: null,
+      chatId: chatId || null,
+      lastActivity: new Date(),
+      isActive: true,
     });
     
     return {
@@ -80,29 +84,34 @@ export class SessionManager {
         id: conversationSessions.id,
         userId: conversationSessions.userId,
         agent: conversationSessions.agent,
+        chatId: conversationSessions.chatId,
+        lastActivity: conversationSessions.lastActivity,
+        isActive: conversationSessions.isActive,
         createdAt: conversationSessions.createdAt,
       })
       .from(conversationSessions)
       .where(
         and(
           eq(conversationSessions.userId, userId),
-          gte(conversationSessions.createdAt, cutoffTime)
+          eq(conversationSessions.isActive, true),
+          gte(conversationSessions.lastActivity, cutoffTime)
         )
       )
-      .orderBy(desc(conversationSessions.createdAt))
+      .orderBy(desc(conversationSessions.lastActivity))
       .limit(5);
     
     // Se há chatId específico, prioriza sessões com esse chatId
+    let session = sessions[0];
     if (chatId) {
-      // TODO: Adicionar campo chatId na tabela conversationSessions se necessário
-      // Por enquanto, usa a sessão mais recente
+      const chatSession = sessions.find(s => s.chatId === chatId);
+      if (chatSession) {
+        session = chatSession;
+      }
     }
     
     if (sessions.length === 0) {
       return null;
     }
-    
-    const session = sessions[0];
     
     // Conta mensagens na sessão
     const messageCount = await this.getMessageCount(session.id);
@@ -110,10 +119,10 @@ export class SessionManager {
     return {
       sessionId: session.id,
       userId: session.userId,
-      chatId,
+      chatId: session.chatId || chatId,
       agentId: session.agent || 'max',
-      isActive: true,
-      lastActivity: session.createdAt,
+      isActive: session.isActive,
+      lastActivity: session.lastActivity,
       messageCount
     };
   }
@@ -122,9 +131,20 @@ export class SessionManager {
    * Atualiza a última atividade de uma sessão
    */
   private async updateLastActivity(sessionId: string): Promise<void> {
-    // TODO: Adicionar campo lastActivity na tabela conversationSessions
-    // Por enquanto, apenas log
-    console.log(`Atualizando atividade da sessão: ${sessionId}`);
+    try {
+      await db
+        .update(conversationSessions)
+        .set({
+          lastActivity: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(conversationSessions.id, sessionId));
+      
+      console.log(`Atividade atualizada para sessão: ${sessionId}`);
+    } catch (error) {
+      console.error(`Erro ao atualizar atividade da sessão ${sessionId}:`, error);
+      throw error;
+    }
   }
   
   /**
@@ -208,8 +228,20 @@ export class SessionManager {
    * Finaliza uma sessão (marca como inativa)
    */
   async closeSession(sessionId: string): Promise<void> {
-    // TODO: Implementar marcação de sessão como inativa
-    console.log(`Finalizando sessão: ${sessionId}`);
+    try {
+      await db
+        .update(conversationSessions)
+        .set({
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(eq(conversationSessions.id, sessionId));
+      
+      console.log(`Sessão finalizada: ${sessionId}`);
+    } catch (error) {
+      console.error(`Erro ao finalizar sessão ${sessionId}:`, error);
+      throw error;
+    }
   }
   
   /**
@@ -218,10 +250,50 @@ export class SessionManager {
   async cleanupOldSessions(): Promise<number> {
     const cutoffTime = new Date(Date.now() - SessionManager.SESSION_TIMEOUT_MINUTES * 60 * 1000);
     
-    // TODO: Implementar limpeza de sessões antigas
-    console.log(`Limpando sessões anteriores a: ${cutoffTime.toISOString()}`);
-    
-    return 0; // Retorna número de sessões removidas
+    try {
+      // Marca sessões antigas como inativas (soft delete)
+      const result = await db
+        .update(conversationSessions)
+        .set({
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(conversationSessions.isActive, true),
+            lt(conversationSessions.lastActivity, cutoffTime)
+          )
+        );
+      
+      console.log(`Sessões marcadas como inativas anteriores a: ${cutoffTime.toISOString()}`);
+      
+      // Retorna o número de sessões afetadas
+      return result.length || 0;
+    } catch (error) {
+      console.error('Erro ao limpar sessões antigas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtém métricas de performance das sessões
+   */
+  getPerformanceMetrics() {
+    return SessionMetricsCollector.getMetrics();
+  }
+
+  /**
+   * Obtém alertas de performance
+   */
+  getPerformanceAlerts() {
+    return SessionMetricsCollector.getPerformanceAlerts();
+  }
+
+  /**
+   * Limpa métricas antigas
+   */
+  cleanupMetrics() {
+    SessionMetricsCollector.cleanupOldMetrics();
   }
 }
 

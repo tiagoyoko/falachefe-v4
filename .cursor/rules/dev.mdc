@@ -1,0 +1,231 @@
+---
+alwaysApply: true
+description: "Regras para Developer com integração ClickUp MCP Server"
+---
+
+# Developer - ClickUp MCP Integration
+
+## Uso Obrigatório do ClickUp MCP Server
+
+### Criação de Tasks de Desenvolvimento
+```typescript
+// ✅ SEMPRE criar task de desenvolvimento no ClickUp
+async function createDevelopmentTask(taskData: {
+  name: string;
+  description: string;
+  technicalDetails: string;
+  priority: number;
+  dueDate: string;
+  assignees?: string[];
+  storyId?: string;
+  dependencies?: string[];
+}) {
+  const task = await mcp_clickup-mcp-server_create_task({
+    name: `💻 ${taskData.name}`,
+    description: `## Descrição\n${taskData.description}\n\n## Detalhes Técnicos\n${taskData.technicalDetails}`,
+    listName: "Sprint Backlog",
+    priority: taskData.priority,
+    dueDate: taskData.dueDate,
+    assignees: taskData.assignees,
+    dependencies: taskData.dependencies,
+    tags: ["development", "coding"]
+  });
+  
+  // Se vinculado a uma story, criar comentário
+  if (taskData.storyId) {
+    await mcp_clickup-mcp-server_create_task_comment({
+      taskId: task.id,
+      commentText: `Vinculado à story: ${taskData.storyId}`
+    });
+  }
+  
+  return task;
+}
+
+// ✅ SEMPRE criar subtasks técnicas
+async function createTechnicalSubtasks(parentTaskId: string, subtasks: {
+  name: string;
+  description: string;
+  estimatedHours: number;
+  dependencies?: string[];
+}[]) {
+  const createdSubtasks = [];
+  
+  for (const subtask of subtasks) {
+    const dueDate = new Date(Date.now() + subtask.estimatedHours * 60 * 60 * 1000).toISOString();
+    
+    const created = await mcp_clickup-mcp-server_create_task({
+      name: `🔧 ${subtask.name}`,
+      description: `## Descrição\n${subtask.description}\n\n## Estimativa\n${subtask.estimatedHours} horas`,
+      parent: parentTaskId,
+      listName: "Sprint Backlog",
+      priority: 3,
+      dueDate,
+      dependencies: subtask.dependencies,
+      tags: ["subtask", "technical"]
+    });
+    
+    createdSubtasks.push(created);
+  }
+  
+  return createdSubtasks;
+}
+```
+
+### Gestão de Bugs e Issues
+```typescript
+// ✅ SEMPRE criar bug report no ClickUp
+async function createBugReport(bugData: {
+  title: string;
+  description: string;
+  stepsToReproduce: string[];
+  expectedBehavior: string;
+  actualBehavior: string;
+  priority: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}) {
+  const bug = await mcp_clickup-mcp-server_create_task({
+    name: `🐛 ${bugData.title}`,
+    description: `## Descrição\n${bugData.description}\n\n## Passos para Reproduzir\n${bugData.stepsToReproduce.map(step => `1. ${step}`).join('\n')}\n\n## Comportamento Esperado\n${bugData.expectedBehavior}\n\n## Comportamento Atual\n${bugData.actualBehavior}`,
+    listName: "Bugs & Issues",
+    priority: bugData.priority,
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    tags: ["bug", bugData.severity]
+  });
+  
+  return bug;
+}
+
+// ✅ SEMPRE atualizar status de desenvolvimento
+async function updateDevelopmentStatus(taskName: string, status: string, notes?: string) {
+  const update = await mcp_clickup-mcp-server_update_task({
+    taskName,
+    status
+  });
+  
+  if (notes) {
+    await mcp_clickup-mcp-server_create_task_comment({
+      taskId: update.id,
+      commentText: `**Status Update**: ${status}\n\n${notes}`
+    });
+  }
+  
+  return update;
+}
+```
+
+### Documentação Técnica
+```typescript
+// ✅ SEMPRE criar documentação técnica no ClickUp
+async function createTechnicalDocument(documentData: {
+  name: string;
+  content: string;
+  type: 'api' | 'architecture' | 'implementation' | 'testing';
+}) {
+  const document = await mcp_clickup-mcp-server_create_document({
+    name: `🔧 ${documentData.type.toUpperCase()}: ${documentData.name}`,
+    parent: { id: "901413034981", type: 6 },
+    visibility: "PRIVATE",
+    create_page: true
+  });
+  
+  // Atualizar conteúdo
+  const pages = await mcp_clickup-mcp-server_list_document_pages({
+    documentId: document.id
+  });
+  
+  if (pages.pages?.[0]) {
+    await mcp_clickup-mcp-server_update_document_page({
+      documentId: document.id,
+      pageId: pages.pages[0].id,
+      content: documentData.content,
+      content_format: "text/md",
+      content_edit_mode: "replace"
+    });
+  }
+  
+  return document;
+}
+```
+
+### Time Tracking
+```typescript
+// ✅ SEMPRE iniciar tracking de tempo
+async function startTimeTracking(taskName: string, description?: string) {
+  return await mcp_clickup-mcp-server_start_time_tracking({
+    taskName,
+    description: description || `Desenvolvimento: ${taskName}`
+  });
+}
+
+// ✅ SEMPRE parar tracking de tempo
+async function stopTimeTracking(description?: string) {
+  return await mcp_clickup-mcp-server_stop_time_tracking({
+    description: description || `Concluído em ${new Date().toISOString()}`
+  });
+}
+```
+
+## Campos Obrigatórios ClickUp
+
+### Task Fields
+- **name**: Título técnico com ícone
+- **description**: Descrição detalhada em markdown
+- **listName**: Lista apropriada (Sprint Backlog, Bugs & Issues)
+- **priority**: 1=Urgent, 2=High, 3=Normal, 4=Low
+- **dueDate**: Data de vencimento baseada na estimativa
+- **assignees**: Array de IDs de desenvolvedores
+- **dependencies**: Array de IDs de tasks dependentes
+- **tags**: Array de tags técnicas
+
+### Document Fields
+- **name**: Nome técnico com ícone e tipo
+- **parent**: Technical Docs List
+- **visibility**: "PRIVATE" para documentação interna
+- **content**: Conteúdo técnico em markdown
+
+## Exemplos de Uso
+
+### Criar Task de Desenvolvimento
+```typescript
+await createDevelopmentTask({
+  name: "Implementar autenticação JWT",
+  description: "Criar sistema de autenticação usando JWT",
+  technicalDetails: "Usar jsonwebtoken, configurar middleware, implementar refresh tokens",
+  priority: 2,
+  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  assignees: ["dev123"],
+  storyId: "story-456",
+  dependencies: ["task-123", "task-456"] // IDs das tasks dependentes
+});
+```
+
+### Criar Bug Report
+```typescript
+await createBugReport({
+  title: "Login não funciona com email inválido",
+  description: "Sistema não valida formato de email corretamente",
+  stepsToReproduce: [
+    "Acessar página de login",
+    "Inserir email inválido (ex: 'teste@')",
+    "Clicar em entrar"
+  ],
+  expectedBehavior: "Sistema deve mostrar erro de email inválido",
+  actualBehavior: "Sistema aceita email e tenta fazer login",
+  priority: 1,
+  severity: 'high'
+});
+```
+
+### Criar Documentação Técnica
+```typescript
+await createTechnicalDocument({
+  name: "API Authentication Endpoints",
+  content: "# API Authentication\n\n## Endpoints\n- POST /api/auth/login\n- POST /api/auth/register\n- POST /api/auth/refresh",
+  type: 'api'
+});
+```
+
+---
+
+**Lembre-se**: Como Developer, sempre use ClickUp MCP para criar tasks técnicas, reportar bugs e documentar implementações!

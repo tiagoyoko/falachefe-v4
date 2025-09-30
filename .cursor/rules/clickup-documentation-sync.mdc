@@ -1,0 +1,309 @@
+---
+alwaysApply: true
+description: "Regra para replicação automática de documentação no ClickUp na pasta correspondente ao projeto"
+---
+
+# Replicação de Documentação no ClickUp
+
+## Regra Principal
+**SEMPRE** que uma documentação for criada ou atualizada no projeto, ela deve ser replicada no ClickUp na pasta com o mesmo nome do projeto. Se a pasta não existir, criar uma nova.
+
+## Quando Aplicar
+- ✅ **SEMPRE**: Ao criar novos arquivos de documentação
+- ✅ **SEMPRE**: Ao atualizar documentação existente
+- ✅ **SEMPRE**: Ao criar Memory Bank entries
+- ✅ **SEMPRE**: Ao gerar relatórios ou análises
+- ✅ **SEMPRE**: Ao criar documentação técnica
+
+## Estrutura de Pastas ClickUp
+
+### Pasta Principal do Projeto
+- **Nome**: `FalaChefe v4` (mesmo nome do projeto)
+- **Localização**: Space "Agencia Vibe Code" → Folder "Documentação"
+- **ID da Pasta**: `901413034973` (Technical Docs List)
+
+### Paginas por Tipo de Documentação
+```
+FalaChefe v4/
+├── 📋 Memory Bank (Documento)
+│   ├── activeContext.md (Page)
+│   ├── progress.md (Page)
+│   ├── projectbrief.md (Page)
+│   ├── productContext.md (Page)
+│   ├── systemPatterns.md (Page)
+│   └── techContext.md (Page)
+├── 🏗️ Architecture (Documento)
+│   ├── architecture.md (Page)
+│   ├── brownfield-architecture.md (Page)
+│   └── brownfield-architecture/ (Page)
+├── 📊 Business/ (Documento)
+│   ├── PRD_Agent_Squad_FalaChefe_v4.md  (Page)
+│   ├── agent-squad.md  (Page)
+│   └── proposta_n8n_magic.html  (Page)
+├── 🚀 Features/  (Documento)
+│   ├── agent-squad.md (Page)
+│   ├── cashflow-agent.md (Page)
+│   └── marketing-agent.md (Page)
+├── 🔧 Technical/  (Documento)
+│   ├── MIGRATION_GUIDE.md (Page)
+│   ├── PRACTICAL_GUIDE.md (Page)
+│   └── README.md (Page)
+└── 📈 Roadmap/  (Documento)
+    ├── dart-mcp-tasks.md (Page)
+    ├── dart-roadmap-backlog.md (Page)
+    └── next-steps-roadmap.md (Page)
+```
+
+## Implementação com ClickUp MCP Server
+
+### 1. Verificar Estrutura Existente
+
+```typescript
+// ✅ SEMPRE verificar se a pasta existe
+const workspaceHierarchy = await mcp_clickup-mcp-server_get_workspace_hierarchy();
+const projectFolder = workspaceHierarchy.workspace.spaces
+  .find(space => space.name === "Agencia Vibe Code")
+  .folders.find(folder => folder.name === "FalaChefe v4");
+
+if (!projectFolder) {
+  // Criar pasta se não existir
+  await mcp_clickup-mcp-server_create_folder({
+    spaceName: "Agencia Vibe Code",
+    name: "FalaChefe v4"
+  });
+}
+```
+
+### 2. Criar Documento no ClickUp
+
+```typescript
+// ✅ SEMPRE criar documento na pasta correta
+const document = await mcp_clickup-mcp-server_create_document({
+  name: "📋 Memory Bank - activeContext",
+  parent: {
+    id: "901413034973", // Technical Docs List
+    type: 6 // List type
+  },
+  visibility: "PRIVATE",
+  create_page: true
+});
+```
+
+### 3. Atualizar Página do Documento
+
+```typescript
+// ✅ SEMPRE atualizar conteúdo da página
+await mcp_clickup-mcp-server_update_document_page({
+  documentId: document.id,
+  pageId: pageId,
+  content: markdownContent,
+  content_format: "text/md",
+  content_edit_mode: "replace"
+});
+```
+
+## Padrões de Nomenclatura
+
+### Documentos ClickUp
+- **Formato**: `[ícone] [tipo] - [nome]`
+- **Exemplos**:
+  - `📋 Memory Bank - activeContext`
+  - `🏗️ Architecture - brownfield-architecture`
+  - `📊 Business - PRD_Agent_Squad_FalaChefe_v4`
+  - `🚀 Features - agent-squad`
+  - `🔧 Technical - MIGRATION_GUIDE`
+
+### Ícones por Categoria
+- 📋 **Memory Bank**: Contexto e progresso
+- 🏗️ **Architecture**: Arquitetura e design
+- 📊 **Business**: PRDs e documentos de negócio
+- 🚀 **Features**: Funcionalidades e recursos
+- 🔧 **Technical**: Guias técnicos e implementação
+- 📈 **Roadmap**: Planejamento e roadmap
+- 🐛 **Bugs**: Issues e correções
+- ✅ **Reports**: Relatórios e validações
+
+## Fluxo de Sincronização
+
+### 1. Detecção de Mudanças
+```typescript
+// ✅ SEMPRE detectar mudanças em arquivos de documentação
+const docFiles = [
+  '.cursor/Memory_Bank/*.md',
+  'docs/architecture/*.md',
+  'docs/business/*.md',
+  'docs/features/*.md',
+  'docs/technical/*.md',
+  'docs/roadmap/*.md'
+];
+```
+
+### 2. Mapeamento de Arquivos
+```typescript
+// ✅ SEMPRE mapear arquivo local para documento ClickUp
+const fileMapping = {
+  '.cursor/Memory_Bank/activeContext.md': '📋 Memory Bank - activeContext',
+  'docs/architecture/architecture.md': '🏗️ Architecture - architecture',
+  'docs/business/PRD_Agent_Squad_FalaChefe_v4.md': '📊 Business - PRD_Agent_Squad_FalaChefe_v4',
+  'docs/features/agent-squad.md': '🚀 Features - agent-squad',
+  'docs/technical/MIGRATION_GUIDE.md': '🔧 Technical - MIGRATION_GUIDE'
+};
+```
+
+### 3. Sincronização Automática
+```typescript
+// ✅ SEMPRE sincronizar após mudanças
+async function syncDocumentationToClickUp(filePath: string) {
+  const content = await readFile(filePath);
+  const documentName = getDocumentName(filePath);
+  
+  // Verificar se documento existe
+  const existingDoc = await findDocumentByName(documentName);
+  
+  if (existingDoc) {
+    // Atualizar documento existente
+    await updateDocumentContent(existingDoc.id, content);
+  } else {
+    // Criar novo documento
+    await createNewDocument(documentName, content);
+  }
+}
+```
+
+## Exemplos de Implementação
+
+### Memory Bank Sync
+```typescript
+// ✅ SEMPRE sincronizar Memory Bank
+const memoryBankFiles = [
+  'activeContext.md',
+  'progress.md',
+  'projectbrief.md',
+  'productContext.md',
+  'systemPatterns.md',
+  'techContext.md'
+];
+
+for (const file of memoryBankFiles) {
+  const content = await readFile(`.cursor/Memory_Bank/${file}`);
+  await syncToClickUp(`📋 Memory Bank - ${file.replace('.md', '')}`, content);
+}
+```
+
+### Architecture Docs Sync
+```typescript
+// ✅ SEMPRE sincronizar documentação de arquitetura
+const archFiles = [
+  'architecture.md',
+  'brownfield-architecture.md'
+];
+
+for (const file of archFiles) {
+  const content = await readFile(`docs/architecture/${file}`);
+  await syncToClickUp(`🏗️ Architecture - ${file.replace('.md', '')}`, content);
+}
+```
+
+### Business Docs Sync
+```typescript
+// ✅ SEMPRE sincronizar documentação de negócio
+const businessFiles = [
+  'PRD_Agent_Squad_FalaChefe_v4.md',
+  'agent-squad.md',
+  'proposta_n8n_magic.html'
+];
+
+for (const file of businessFiles) {
+  const content = await readFile(`docs/business/${file}`);
+  await syncToClickUp(`📊 Business - ${file.replace('.md', '').replace('.html', '')}`, content);
+}
+```
+
+## Validação e Verificação
+
+### Checklist de Sincronização
+- [ ] Pasta do projeto existe no ClickUp?
+- [ ] Documento foi criado/atualizado?
+- [ ] Conteúdo está sincronizado?
+- [ ] Nomenclatura segue o padrão?
+- [ ] Ícone correto foi aplicado?
+
+### Comandos de Verificação
+```bash
+# Verificar se pasta existe
+curl -X GET "https://api.clickup.com/api/v2/folder/901413034973" \
+  -H "Authorization: pk_212588041_E7UZ82BWAOSMDW55PGE3C5VO4SVCRARF"
+
+# Listar documentos na pasta
+curl -X GET "https://api.clickup.com/api/v2/list/901413034973/doc" \
+  -H "Authorization: pk_212588041_E7UZ82BWAOSMDW55PGE3C5VO4SVCRARF"
+```
+
+## Tratamento de Erros
+
+### Erro: Pasta não existe
+```typescript
+// ✅ SEMPRE criar pasta se não existir
+try {
+  await getFolder({ folderName: "FalaChefe v4" });
+} catch (error) {
+  if (error.message.includes("not found")) {
+    await createFolder({
+      spaceName: "Agencia Vibe Code",
+      name: "FalaChefe v4"
+    });
+  }
+}
+```
+
+### Erro: Documento não existe
+```typescript
+// ✅ SEMPRE criar documento se não existir
+try {
+  await getDocument({ documentId: documentId });
+} catch (error) {
+  if (error.message.includes("not found")) {
+    await createDocument({
+      name: documentName,
+      parent: { id: "901413034973", type: 6 },
+      visibility: "PRIVATE",
+      create_page: true
+    });
+  }
+}
+```
+
+## Benefícios da Sincronização
+
+1. **Centralização**: Toda documentação em um local
+2. **Colaboração**: Equipe pode acessar e editar
+3. **Versionamento**: Histórico de mudanças no ClickUp
+4. **Busca**: Fácil localização de documentos
+5. **Integração**: Documentação integrada com tasks e projetos
+
+## Exemplos de Uso
+
+### Após Criar Memory Bank
+```typescript
+// ✅ SEMPRE sincronizar após criar Memory Bank
+const memoryBankContent = await readFile('.cursor/Memory_Bank/activeContext.md');
+await syncToClickUp('📋 Memory Bank - activeContext', memoryBankContent);
+```
+
+### Após Atualizar Architecture
+```typescript
+// ✅ SEMPRE sincronizar após atualizar arquitetura
+const archContent = await readFile('docs/architecture/architecture.md');
+await syncToClickUp('🏗️ Architecture - architecture', archContent);
+```
+
+### Após Criar Relatório
+```typescript
+// ✅ SEMPRE sincronizar após criar relatório
+const reportContent = await readFile('docs/reports/validation-report.md');
+await syncToClickUp('✅ Reports - validation-report', reportContent);
+```
+
+---
+
+**Lembre-se**: A sincronização com ClickUp garante que toda a documentação do projeto esteja centralizada e acessível para toda a equipe!

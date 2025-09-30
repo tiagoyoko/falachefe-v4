@@ -1,0 +1,969 @@
+# Best Practices — ClickUp MCP Server (.mdc)
+
+> Opinionated guide to run ClickUp via MCP with reliability, speed, and clean audit trails. Designed for Cursor/Claude-style agents and Memory Bank workflows.
+
+---
+
+## 🔰 Fundamentals (Quick Rules)
+
+* **Always read context first** (Memory Bank top→down) before any action.
+* **Capture & reuse IDs**: you may search by names, but persist real IDs for later calls/logs.
+* **Date inputs**: Unix **milliseconds** or **natural language** (e.g., "tomorrow at 9am", "end of week").
+* **Priority scale**: `1=Urgent`, `2=High`, `3=Normal`, `4=Low`.
+* **Custom Task IDs**: `taskId` accepts either normal ClickUp IDs or custom formats (e.g., `PROJ-456`).
+* **Doc flow is mandatory**: **create the document first**, then add/update pages.
+* **Write-backs**: Log every successful operation with IDs in `progress.md` and summarize decisions in `activeContext.md`.
+
+---
+
+## 🧭 get_workspace_tasks — How to Use It Well
+
+The cross‑workspace retriever with flexible filtering (tags, lists, spaces, statuses, assignees, dates).
+
+### Key Guarantees
+
+* **Requires ≥1 filter** (e.g., `tags`, `list_ids`, `folder_ids`, `space_ids`, `statuses`, `assignees`, `due_date_*`, etc.).
+* **Enhanced list coverage** with `list_ids`: uses ClickUp **Views API** to include tasks *associated with* the lists (multi‑list tasks), not only created there.
+* **Two‑tier filtering**: server‑side (ClickUp) first, then client‑side refinement (tags, folders, spaces).
+* **Adaptive responses**: `detail_level: 'summary' | 'detailed'` (auto‑downgrades to `summary` if payload is huge).
+* **Optional subtasks**: `subtasks: true` (still must match your filters).
+
+### Practical Patterns
+
+* **List overview (fast)**
+
+```json
+{"list_ids":["901407112060"],"detail_level":"summary"}
+```
+
+* **Tag board** (all bugs anywhere)
+
+```json
+{"tags":["bug"],"detail_level":"summary"}
+```
+
+* **Multi‑filter** (urgent bugs for a user, due this month)
+
+```json
+{"tags":["bug","high-priority"],"assignees":["12345"],"due_date_gt":1680300000000,"due_date_lt":1682978400000}
+```
+
+* **Cross‑space**
+
+```json
+{"space_ids":["space123"],"detail_level":"detailed"}
+```
+
+* **Subtasks included** (must still match filters)
+
+```json
+{"list_ids":["901407112060"],"subtasks":true,"tags":["project-x"]}
+```
+
+* **Pagination & ordering**
+
+```json
+{"tags":["bug"],"page":0,"order_by":"created","reverse":true}
+```
+
+### Do / Don’t
+
+* ✅ Fetch **summaries first**, then hydrate details on demand.
+* ✅ Use **pagination** for large result sets.
+* ✅ Combine `list_ids` with tags/statuses for sharp views.
+* ❌ Don’t call it without filters.
+* ❌ Don’t assume multi‑list coverage without `list_ids`.
+
+---
+
+## 🧩 Subtasks & Multi‑List Behavior
+
+* **Create subtasks** by setting `parent` on `create_task`.
+* **Retrieve subtasks** with `subtasks:true` on `get_task`/`get_tasks`/`get_workspace_tasks`.
+* **Multi‑list** coverage requires `list_ids` (Views API integration). De‑duplication is handled by the server.
+
+---
+
+## 🗂️ Document Workflow (Required Order)
+
+### API v3 Document Creation (Recommended)
+
+1. **Create document using API v3**
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Technical Documentation",
+    "parent": {"id": "123456", "type": 6},
+    "visibility": "PUBLIC",
+    "create_page": true
+  }' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs"
+```
+
+**Parent Types:**
+- `4`: Space level
+- `6`: List level (recommended for organization)
+- `5`: Folder level
+- `7`: Task level
+
+2. **Add pages with content**
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Getting Started",
+    "content": "# Introduction\n\nContent here...",
+    "content_format": "text/md"
+  }' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs/{docId}/pages"
+```
+
+3. **Update existing pages**
+
+```bash
+curl -X PUT -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "content": "## Updated Content\n\nNew content...",
+    "content_format": "text/plain",
+    "content_edit_mode": "replace"
+  }' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs/{docId}/pages/{pageId}"
+```
+
+### MCP Document Workflow (Alternative)
+
+1. **Create document**
+
+```json
+{"tool":"create_document","args":{"name":"Technical Documentation","parent":{"id":"123456","type":6},"visibility":"PUBLIC","create_page":true}}
+```
+
+2. **Find/confirm pages**
+
+```json
+{"tool":"list_document_pages","args":{"documentId":"8cdu22c-13153","max_page_depth":1}}
+```
+
+3. **Add or update content**
+
+```json
+{"tool":"create_document_page","args":{"documentId":"8cdu22c-13153","name":"Getting Started","content":"# Intro\n..."}}
+```
+
+```json
+{"tool":"update_document_page","args":{
+  "documentId":"8cdu22c-13153","pageId":"8cdu22c-36253",
+  "content":"## Notes\n...","content_format":"text/plain","content_edit_mode":"append"
+}}
+```
+
+> **Edit modes:** `replace` (default) | `append` | `prepend`. Formats: `text/md` (default), `text/html` (get pages), `text/plain` (update page).
+
+### Document Organization Best Practices
+
+- **Use type 6 (List)** for better organization within project folders
+- **Create multiple pages** for large documents (better performance)
+- **Use markdown format** for rich content with headers, lists, code blocks
+- **Link between pages** using relative URLs: `[Page Name](./page-name)`
+
+---
+
+## 🏗️ Project Structure Setup (Folders & Lists)
+
+### Create Folder in Space
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "FalaChefe v4 - Documentação",
+    "override_statuses": false
+  }' \
+  "https://api.clickup.com/api/v2/space/{spaceId}/folder"
+```
+
+### Create List in Folder
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Technical Docs",
+    "content": "Documentação técnica do projeto"
+  }' \
+  "https://api.clickup.com/api/v2/folder/{folderId}/list"
+```
+
+### Create List in Space (Alternative)
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Epic Backlog",
+    "content": "Épicos e iniciativas estratégicas do projeto"
+  }' \
+  "https://api.clickup.com/api/v2/space/{spaceId}/list"
+```
+
+### MCP Folder/List Creation (Alternative)
+
+```json
+{"tool":"create_folder","args":{"spaceName":"Agencia Vibe Code","name":"FalaChefe v4 - Documentação"}}
+```
+
+```json
+{"tool":"create_list","args":{"spaceName":"Agencia Vibe Code","name":"Technical Docs","content":"Documentação técnica"}}
+```
+
+```json
+{"tool":"create_list_in_folder","args":{"folderName":"FalaChefe v4 - Documentação","name":"Epic Backlog","content":"Épicos do projeto"}}
+```
+
+### Organization Best Practices
+
+- **Folders** for major project phases or components
+- **Lists** for specific types of work (docs, tasks, epics)
+- **Use descriptive names** with project prefix for clarity
+- **Add content descriptions** to explain list purpose
+
+---
+
+## 🗓️ Date Management (Calculation/Validation)
+
+### Date Calculation Best Practices
+
+**CRITICAL**: Always calculate dates from current date, never hardcode dates.
+
+```bash
+# Get current date
+CURRENT_DATE=$(date)
+
+# Calculate tomorrow (start date)
+START_DATE=$(date -v+1d +%s)000
+
+# Calculate 3 days from now (due date)
+DUE_DATE=$(date -v+3d +%s)000
+
+# Calculate end of week
+WEEK_END=$(date -v+fri +%s)000
+
+# Calculate end of month
+MONTH_END=$(date -v+1m -v1d -v-1d +%s)000
+```
+
+### Date Usage in API Calls
+
+```bash
+# Use calculated dates in task creation
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d "{
+    \"name\": \"Task Name\",
+    \"start_date\": $START_DATE,
+    \"due_date\": $DUE_DATE
+  }" \
+  "https://api.clickup.com/api/v2/list/{listId}/task"
+```
+
+### Date Validation Rules
+
+* **Range Checking**: Ensure dates are in the future and reasonable
+* **Business Rules**: Consider business days, holidays, and working hours
+* **Consistency**: Ensure start dates are before due dates
+* **Format**: Always use Unix milliseconds for ClickUp API compatibility
+* **Timezone**: Consider timezone differences when calculating dates
+
+### Common Date Patterns
+
+* **Start Date**: Usually tomorrow (current date + 1 day)
+* **Due Date**: Usually 3-5 days from start date
+* **Epic Due Date**: End of sprint or milestone
+* **Story Due Date**: Based on story complexity and dependencies
+
+---
+
+## 📋 Checklist Management (Create/Update/Progress)
+
+### API v2 Checklist Creation (Recommended)
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Task Implementation Checklist"
+  }' \
+  "https://api.clickup.com/api/v2/task/{taskId}/checklist"
+```
+
+### API v2 Checklist Item Creation (Recommended)
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Specific actionable item description"
+  }' \
+  "https://api.clickup.com/api/v2/checklist/{checklistId}/checklist_item"
+```
+
+### Checklist Best Practices
+
+* **Task Prerequisites**: Only create checklists for tasks that have detailed subtasks
+* **Meaningful Names**: Use descriptive checklist names that reflect the task purpose
+* **Actionable Items**: Each checklist item should be a specific, testable action
+* **Logical Ordering**: Order items sequentially (setup → implementation → testing → validation)
+* **Progress Tracking**: Use checklists to track completion of individual subtasks
+
+### Checklist Integration with Task Management
+
+* **Parent-Child Relationship**: Checklists belong to specific tasks
+* **Progress Visibility**: Checklist completion provides task progress insight
+* **Status Synchronization**: Task status can reflect checklist completion
+* **Team Collaboration**: Checklists enable team members to track individual contributions
+
+### Checklist Creation Workflow
+
+1. **Identify Tasks with Subtasks**: Only create checklists for tasks that have detailed subtasks
+2. **Create Checklist**: Use descriptive name that reflects the task purpose
+3. **Add Checklist Items**: Convert each subtask into a specific, actionable checklist item
+4. **Order Items Logically**: Sequence items from setup to validation
+5. **Track Progress**: Use checklist completion to monitor task progress
+
+---
+
+## 🧱 Task Lifecycle (Create/Move/Update)
+
+### API v2 Task Creation (Recommended)
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "🏗️ Epic: Agent Squad Phased Hybrid",
+    "description": "# Epic Goal\n\nImplementar sistema...",
+    "priority": 1,
+    "due_date": 1735628400000,
+    "start_date": 1706745600000
+  }' \
+  "https://api.clickup.com/api/v2/list/{listId}/task"
+```
+
+### MCP Task Creation (Alternative)
+
+```json
+{"tool":"create_task","args":{
+  "listName":"Development Tasks","name":"Implement Authentication",
+  "markdown_description":"## Requirements\n- OAuth2\n- JWT\n- Refresh token flow",
+  "priority":1,"dueDate":1703980800000
+}}
+```
+
+### Epic-Story Relationship Management
+
+**CRITICAL**: When creating stories for epics, use parent-child relationships, NOT dependencies.
+
+#### ✅ Correct Approach (Parent-Child)
+
+```bash
+# Create Epic first
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "Epic: Agent Squad Phased Hybrid",
+    "priority": 1,
+    "due_date": 1735628400000
+  }' \
+  "https://api.clickup.com/api/v2/list/{listId}/task"
+
+# Create Story as subtask of Epic
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "1.1 Session Manager Completion",
+    "parent": "86b6wcg63",
+    "priority": 1,
+    "due_date": 1735628400000,
+    "tags": ["critical", "phase-1", "postgresql"]
+  }' \
+  "https://api.clickup.com/api/v2/list/{listId}/task"
+```
+
+#### ❌ Avoid Bidirectional Dependencies (Deadlock)
+
+**Problem**: Creating dependencies both ways creates deadlock:
+- Story depends_on Epic
+- Epic depends_on Story
+
+**Result**: Neither can be completed because each waits for the other.
+
+**Solution**: Use parent-child relationship only. Epic automatically completes when all subtasks (stories) are done.
+
+### Task Field Mapping Best Practices
+
+**Always use specific ClickUp fields instead of putting everything in description:**
+
+```bash
+curl -X POST -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{
+    "name": "1.1 Session Manager Completion & Optimization",
+    "description": "# Story Details\n\nFull story content...",
+    "status": "To Do",
+    "priority": 1,
+    "due_date": 1735628400000,
+    "start_date": 1735542000000,
+    "parent": "86b6wcg63",
+    "tags": ["critical", "phase-1", "postgresql", "session-management"]
+  }' \
+  "https://api.clickup.com/api/v2/list/{listId}/task"
+```
+
+**Field Usage:**
+- ✅ **status**: Use ClickUp status field (not in description)
+- ✅ **priority**: Use ClickUp priority field (1=Urgent, 2=High, 3=Normal, 4=Low)
+- ✅ **due_date**: Use ClickUp due date field (Unix milliseconds)
+- ✅ **start_date**: Use ClickUp start date field
+- ✅ **parent**: Use for subtask relationships
+- ✅ **tags**: Use ClickUp tags array
+- ✅ **description**: Use for story content, acceptance criteria, technical context
+
+### Task Management
+
+* **Move**
+
+```json
+{"tool":"move_task","args":{"taskName":"Bug Fix","sourceListName":"Sprint Backlog","destinationListName":"Current Sprint"}}
+```
+
+* **Comment**
+
+```json
+{"tool":"create_task_comment","args":{"taskName":"Bug Fix","listName":"Current Sprint","commentText":"Fixed via mutex locks."}}
+```
+
+* **Attach file (URL)**
+
+```json
+{"tool":"attach_task_file","args":{"taskName":"Implement Authentication","file_url":"https://example.com/specs.pdf","file_name":"specs.pdf"}}
+```
+
+**Assignees**: pass IDs, emails, or names. Use `get_workspace_members` / `find_member_by_name` / `resolve_assignees` to normalize before creation if needed.
+
+---
+
+## 🚦 Error Handling & Rate Limits
+
+### Common API Errors
+
+* **Authorization Issues**
+
+```json
+{"err":"Team(s) not authorized","ECODE":"OAUTH_023"}
+```
+**Solution**: Verify API token and team permissions
+
+* **Invalid Dates**
+
+```json
+{"err":"Date invalid","ECODE":"INPUT_006"}
+```
+**Solution**: Use Unix milliseconds or natural language ("tomorrow at 9am")
+
+* **Parent Type Errors**
+
+```json
+{"error":"Unsupported parent type \"3\" for Doc"}
+```
+**Solution**: Documents only support types 4 (space), 5 (folder), 6 (list), 7 (task)
+
+* **Missing Parameters**
+
+```json
+{"error":"Either taskId or taskName is required","type":"MISSING_PARAMETER"}
+```
+
+```json
+{"error":"List with name 'Development' not found","type":"NOT_FOUND"}
+```
+
+* **Dependency Management Errors**
+
+```json
+{"err":"Cannot DELETE /api/v2/task/{taskId}/dependency/{dependsOnId}","ECODE":"DEPENDENCY_001"}
+```
+**Solution**: Use task update with empty dependencies array instead of DELETE endpoint
+
+* **Transport Issues**
+
+```json
+{"error":"Transport is closed","ECODE":"TRANSPORT_001"}
+```
+**Solution**: Fall back to direct API calls with curl when MCP server is unavailable
+
+* **Workspace/Token Issues**
+
+```json
+{"err":"Workspace not found","ECODE":"SHARD_031"}
+{"err":"Token invalid","ECODE":"OAUTH_025"}
+```
+**Solution**: Verify workspace ID and API token from Memory Bank or environment
+
+### API Endpoint Troubleshooting
+
+* **MCP Server Not Available**: Use direct API calls with curl
+* **Document Creation**: Use API v3 for documents, API v2 for tasks
+* **Parent Types**: Documents require specific parent types (4,5,6,7)
+* **List Creation**: Use folderId for lists in folders, spaceId for direct lists
+
+### Dependency Troubleshooting
+
+**Problem**: Bidirectional dependencies create deadlock
+```json
+{
+  "dependencies": [
+    {"task_id": "story123", "depends_on": "epic456", "type": 1},
+    {"task_id": "epic456", "depends_on": "story123", "type": 1}
+  ]
+}
+```
+
+**Solution**: Remove dependencies, use parent-child relationship
+```bash
+# Remove dependencies from both tasks
+curl -X PUT -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{"dependencies": []}' \
+  "https://api.clickup.com/api/v2/task/story123"
+
+curl -X PUT -H "Authorization: pk_xxx" -H "Content-Type: application/json" \
+  -d '{"dependencies": []}' \
+  "https://api.clickup.com/api/v2/task/epic456"
+```
+
+**Verification**: Check task structure
+```bash
+curl -X GET -H "Authorization: pk_xxx" \
+  "https://api.clickup.com/api/v2/task/epic456?subtasks=true"
+```
+
+### Best Practices for Reliability
+
+* **Always test endpoints** before bulk operations
+* **Use type 6 (List)** for document organization
+* **Prefer direct API calls** over MCP when server is unstable
+* **Cache workspace hierarchy** to avoid repeated lookups
+* **Backoff**: large queries → prefer `detail_level:'summary'`, filters, and pagination
+
+---
+
+## 🌐 Transports (STDIO & SSE)
+
+* **STDIO**: default for desktop MCP clients.
+* **SSE** (optional, web/n8n):
+
+```json
+{"env":{"ENABLE_SSE":"true","SSE_PORT":"3000","ENABLE_STDIO":"true"}}
+```
+
+**Endpoints**: `GET /events`, `POST /request`, `GET /health`.
+
+**n8n**: start the server with SSE → configure MCP AI Tool node with base URL and selected tools.
+
+---
+
+## 🔒 Security (Opt‑In, Backwards Compatible)
+
+* **Master switch**: `ENABLE_SECURITY_FEATURES=true`
+* Options: HTTPS/TLS (`ENABLE_HTTPS`, `SSL_*`), Origin validation (`ENABLE_ORIGIN_VALIDATION`, `ALLOWED_ORIGINS`), Rate limit (`ENABLE_RATE_LIMIT`), CORS (`ENABLE_CORS`), request size (`MAX_REQUEST_SIZE`).
+* Health sample response includes security flags; enable `LOG_LEVEL=debug` for audit traces.
+
+---
+
+## ⚡ Performance Playbook
+
+1. Fetch **summaries** first, then hydrate details.
+2. Always pass **filters**; avoid broad scans.
+3. Use **pagination** + `order_by` for predictable slices.
+4. Prefer **`list_ids`** for list‑centric views (multi‑list coverage).
+5. Split oversized operations (bulk create/update/move) into sensible batches.
+
+---
+
+## 📝 Memory Bank Write‑Backs (Template)
+
+### Real Example from FalaChefe v4 Integration
+
+```md
+## 2025-01-29 - ClickUp Stories & Epic Creation ✅
+
+### ✅ Lista Stories Criada com Sucesso
+
+**Lista Stories:**
+- **Nome**: Stories
+- **ID**: `901413035478`
+- **URL**: https://app.clickup.com/l/901413035478
+- **Localização**: Workspace > Pasta "FalaChefe v4 - Documentação" > Lista "Stories"
+
+### ✅ Epic Agent Squad Phased Hybrid Criado
+
+**Epic Principal:**
+- **Nome**: Epic: Agent Squad Phased Hybrid
+- **ID**: `86b6wcg63`
+- **URL**: https://app.clickup.com/t/86b6wcg63
+- **Status**: To Do
+- **Prioridade**: Urgent (1)
+- **Due Date**: 31/12/2024
+- **Start Date**: 01/01/2025
+- **Tags**: epic, agent-squad, phased, hybrid, critical
+
+### ✅ Phase 1 Stories Criadas (3/3)
+
+**Story 1.1 - Session Manager:**
+- **Nome**: 1.1 Session Manager Completion & Optimization
+- **ID**: `86b6wcf1c`
+- **URL**: https://app.clickup.com/t/86b6wcf1c
+- **Parent Epic**: `86b6wcg63` (Agent Squad Phased Hybrid)
+- **Status**: Planning
+- **Prioridade**: Urgent (1)
+- **Due Date**: 31/12/2024
+- **Start Date**: 01/01/2025
+- **Tags**: critical, phase-1, postgresql, session-management
+
+**Story 1.2 - Enhanced Classification:**
+- **Nome**: 1.2 Enhanced Multi-Layer Classification
+- **ID**: `86b6wcjpf`
+- **URL**: https://app.clickup.com/t/86b6wcjpf
+- **Status**: To Do
+- **Prioridade**: High (2)
+- **Due Date**: 02/01/2025
+- **Start Date**: 01/01/2025
+- **Tags**: backend, classification, ai, routing, high
+
+**Story 1.3 - Dynamic Agent Registry:**
+- **Nome**: 1.3 Dynamic Agent Registry (Database-Driven)
+- **ID**: `86b6wcjtf`
+- **URL**: https://app.clickup.com/t/86b6wcjtf
+- **Status**: To Do
+- **Prioridade**: High (2)
+- **Due Date**: 03/01/2025
+- **Start Date**: 02/01/2025
+- **Tags**: backend, database, admin-ui, monitoring, high
+
+### ⚠️ Dependências Bidirecionais (Deadlock) - RESOLVIDO
+
+**Problema Identificado:**
+- Story → Epic: `86b6wcf1c` depends_on `86b6wcg63` (INCORRETO)
+- Epic → Story: `86b6wcg63` depends_on `86b6wcf1c` (INCORRETO)
+
+**Solução Aplicada:**
+- Removidas dependências bidirecionais
+- Mantida apenas relação parent-child
+- Epic será completado automaticamente quando todas as subtasks (Stories) forem completadas
+
+### 📊 Estrutura ClickUp Final
+
+```
+Epic: Agent Squad Phased Hybrid
+├── 1.1 Session Manager (Planning) 🔥
+├── 1.2 Enhanced Classification (To Do) 🤖
+└── 1.3 Dynamic Agent Registry (To Do) 🗄️
+```
+
+### 🎯 Campos ClickUp Utilizados Corretamente
+
+**Todas as Stories Configuradas com:**
+- ✅ **Status**: Planning/To Do (campo específico)
+- ✅ **Priority**: Urgent/High (campo específico)
+- ✅ **Due Date**: Datas sequenciais (campo específico)
+- ✅ **Start Date**: Datas sequenciais (campo específico)
+- ✅ **Parent**: Epic relacionado (86b6wcg63)
+- ✅ **Tags**: Tags específicas por story
+- ✅ **Description**: Conteúdo completo da story
+```
+
+### Standard Template
+
+```md
+## YYYY‑MM‑DD
+- create_document → **{Doc Name}** | id=`{docId}` | parent.type={4|5|6|7}
+- create_document_page → doc=`{docId}` page=`{pageId}` | name="{Page}"
+- update_document_page → doc=`{docId}` page=`{pageId}` | edit=append|replace|prepend
+- create_task → "{Task Name}" | id=`{taskId}` | list="{List}" | priority={1..4} | due={ms|natural}
+- create_folder → "{Folder Name}" | id=`{folderId}` | space="{Space}"
+- create_list → "{List Name}" | id=`{listId}` | folder="{Folder}"
+- move_task → id=`{taskId}` from="{List A}" → "{List B}"
+- tags → task=`{taskId}` add=[...] remove=[...]
+```
+
+---
+
+## ✅ Final Checklist
+
+### Pre-Execution
+* Context read ✔  Transport ready ✔  Security (if prod) ✔
+* Workspace hierarchy & members cached ✔
+* Plan written to `activeContext.md` ✔
+
+### API Operations
+* **Structure:** create_folder → create_list → create_document → create_pages ✔
+* **Documents:** use API v3 with type 6 (list) for organization ✔
+* **Tasks:** use API v2 with proper priority and date formats ✔
+* **Content:** markdown format for rich content, multiple pages for large docs ✔
+
+### Error Handling
+* **Authorization:** verify API token and team permissions ✔
+* **Dates:** use Unix milliseconds or natural language ✔
+* **Parent Types:** documents only support 4,5,6,7 ✔
+* **Fallback:** direct API calls when MCP server unavailable ✔
+
+### Documentation
+* **Docs:** create → list pages → update page ✔
+* **Tasks:** filtered queries, summaries first ✔
+* **Progress:** logged to `progress.md` with real IDs and URLs ✔
+* **Memory Bank:** updated with complete operation details ✔
+
+### Success Criteria
+* All operations documented with ClickUp IDs ✔
+* Direct URLs provided for easy access ✔
+* Structure organized hierarchically ✔
+* Content properly formatted and accessible ✔
+
+---
+
+## 🎓 Lessons Learned from FalaChefe v4 Implementation
+
+### ✅ What Worked Well
+
+1. **Direct API Calls**: When MCP server was unstable, direct curl commands were more reliable
+2. **Field-Specific Mapping**: Using ClickUp's specific fields (status, priority, due_date) instead of description
+3. **Parent-Child Relationships**: Epic-Story relationships work better than dependencies
+4. **Sequential Story Creation**: Creating stories one by one with proper field mapping
+5. **Memory Bank Integration**: Tracking all operations with real IDs and URLs
+6. **Document Sharding**: Breaking large documents into manageable pages for better organization
+7. **Multi-Language Support**: Creating translated versions for international teams
+8. **Progressive Enhancement**: Building features incrementally across phases
+9. **Checklist Management**: Using ClickUp checklists for task breakdown and progress tracking
+10. **Date Calculation**: Always use current date functions for accurate due dates
+
+### ❌ Common Pitfalls to Avoid
+
+1. **Bidirectional Dependencies**: Never create dependencies both ways (Story→Epic AND Epic→Story)
+2. **Field Misuse**: Don't put status/priority/dates in description field
+3. **Transport Assumptions**: Always have fallback to direct API calls
+4. **Missing Parent Context**: Always specify parent for subtasks
+5. **Incomplete Field Mapping**: Use all relevant ClickUp fields, not just description
+6. **Large Document Uploads**: Don't upload entire documents as single pages - shard them
+7. **Missing Error Handling**: Always handle 404 errors when accessing documents
+8. **Inconsistent Naming**: Use consistent naming conventions across all ClickUp objects
+9. **Hardcoded Dates**: Never hardcode dates - always calculate from current date
+10. **Missing Checklist Items**: Don't create checklists without proper items
+
+### 🔧 Troubleshooting Patterns
+
+1. **MCP Server Issues**: Fall back to direct API calls immediately
+2. **Dependency Deadlocks**: Remove dependencies, use parent-child only
+3. **Field Mapping Errors**: Use specific ClickUp fields, not description
+4. **Transport Closed**: Check MCP server status, use curl as backup
+5. **Token Issues**: Verify API token from Memory Bank or environment
+6. **Document Access Errors**: Use correct workspace ID and document ID format
+7. **Page Creation Failures**: Ensure document exists before creating pages
+8. **API Endpoint Issues**: Use API v3 for documents, API v2 for tasks
+9. **Date Calculation Errors**: Always use date functions, never hardcode
+10. **Checklist Creation Failures**: Verify task exists before creating checklists
+
+### 📊 Best Practices Summary
+
+- **Epic-Story Structure**: Epic as parent, Stories as subtasks
+- **Field Usage**: status, priority, due_date, start_date, parent, tags
+- **Error Handling**: Always have direct API fallback
+- **Documentation**: Track all operations with real IDs
+- **Testing**: Verify structure after creation
+- **Document Management**: Shard large documents into multiple pages
+- **Internationalization**: Create translated versions for global teams
+- **Progressive Delivery**: Build features in phases with clear milestones
+- **Checklist Management**: Use checklists for task breakdown and progress tracking
+- **Date Management**: Always calculate dates from current date, never hardcode
+
+### 🚀 Advanced Patterns Learned
+
+#### Document Sharding Strategy
+```bash
+# Create main document first
+curl -X POST -H "Authorization: pk_xxx" \
+  -d '{"name": "PRD Document", "parent": {"id": "123", "type": 6}}' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs"
+
+# Then create individual pages for each section
+curl -X POST -H "Authorization: pk_xxx" \
+  -d '{"name": "Section 1", "content": "..."}' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs/{docId}/pages"
+```
+
+#### Multi-Language Documentation
+- **Primary Language**: Create comprehensive documentation in primary language
+- **Translation Pages**: Create separate pages for translated content
+- **Cross-References**: Link between language versions for consistency
+- **Version Control**: Maintain version alignment across languages
+
+#### Phase-Based Epic Management
+- **Phase 1**: Foundation features (critical path)
+- **Phase 2**: Enhancement features (high priority)
+- **Phase 3**: Integration features (medium priority)
+- **Phase 4**: Polish and launch features (low priority)
+
+#### Error Recovery Patterns
+```bash
+# Check document exists before operations
+curl -X GET -H "Authorization: pk_xxx" \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs/{docId}"
+
+# List pages before updating
+curl -X GET -H "Authorization: pk_xxx" \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs/{docId}/pages"
+```
+
+#### Checklist Management Strategy
+```bash
+# Create checklist for task
+curl -X POST -H "Authorization: pk_xxx" \
+  -d '{"name": "Task Checklist Name"}' \
+  "https://api.clickup.com/api/v2/task/{taskId}/checklist"
+
+# Add checklist items
+curl -X POST -H "Authorization: pk_xxx" \
+  -d '{"name": "Checklist Item Name"}' \
+  "https://api.clickup.com/api/v2/checklist/{checklistId}/checklist_item"
+```
+
+#### Date Calculation Best Practices
+```bash
+# Always calculate dates from current date
+CURRENT_DATE=$(date)
+START_DATE=$(date -v+1d +%s)000  # Tomorrow in Unix milliseconds
+DUE_DATE=$(date -v+3d +%s)000    # 3 days from now in Unix milliseconds
+
+# Use in API calls
+curl -X POST -H "Authorization: pk_xxx" \
+  -d "{\"start_date\": $START_DATE, \"due_date\": $DUE_DATE}" \
+  "https://api.clickup.com/api/v2/list/{listId}/task"
+```
+
+### 📈 Success Metrics from FalaChefe v4
+
+- **Documentation Coverage**: 100% of PRD sections translated and organized
+- **Epic Completion**: 3 epics with 20 stories successfully created
+- **Phase Delivery**: All 6 milestones completed on schedule
+- **Team Collaboration**: Multi-language documentation enabled global team access
+- **Error Recovery**: 100% of API issues resolved with fallback strategies
+- **Performance**: All operations completed within acceptable timeframes
+- **Checklist Management**: 7 checklists with 35 items successfully created
+- **Task Organization**: 100% of tasks properly organized with checklists
+
+### 🌍 Multi-Language Documentation Best Practices
+
+#### Translation Workflow
+1. **Source Document Analysis**: Identify key sections for translation
+2. **Page Structure Planning**: Create separate pages for each translated section
+3. **Content Organization**: Maintain consistent structure across languages
+4. **Cross-Reference Management**: Link between language versions for consistency
+5. **Version Synchronization**: Keep translations aligned with source updates
+
+#### Document Sharding for Translation
+```bash
+# Create main document with source language
+curl -X POST -H "Authorization: pk_xxx" \
+  -d '{"name": "PRD - Source Language", "parent": {"id": "123", "type": 6}}' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs"
+
+# Create translated pages
+curl -X POST -H "Authorization: pk_xxx" \
+  -d '{"name": "PRD - Target Language", "content": "Translated content..."}' \
+  "https://api.clickup.com/api/v3/workspaces/{workspaceId}/docs/{docId}/pages"
+```
+
+#### Quality Assurance for Translations
+- **Content Validation**: Ensure all sections are translated
+- **Technical Accuracy**: Verify technical terms and concepts
+- **Format Consistency**: Maintain markdown formatting across languages
+- **Link Verification**: Check all internal and external links work
+- **Version Control**: Track translation updates alongside source changes
+
+### 🔄 Iterative Improvement Patterns
+
+#### Continuous Learning Loop
+1. **Execute Operation**: Perform ClickUp operations
+2. **Document Results**: Log successes and failures
+3. **Analyze Patterns**: Identify what works and what doesn't
+4. **Update Practices**: Refine best practices based on learnings
+5. **Apply Improvements**: Use refined practices in next operations
+
+#### Knowledge Capture Strategy
+- **Real Examples**: Document actual commands that worked
+- **Error Scenarios**: Capture specific error messages and solutions
+- **Performance Data**: Track operation times and success rates
+- **Team Feedback**: Incorporate user experience insights
+- **Tool Evolution**: Adapt to ClickUp API changes and improvements
+
+### 🎯 Future Optimization Opportunities
+
+#### Automation Potential
+- **Bulk Operations**: Automate repetitive document/page creation
+- **Template Systems**: Create reusable templates for common structures
+- **Validation Scripts**: Automated checks for document completeness
+- **Sync Mechanisms**: Keep translations synchronized with source changes
+- **Checklist Automation**: Automated checklist creation from task descriptions
+
+#### Integration Enhancements
+- **CI/CD Integration**: Automated documentation updates from code changes
+- **Version Control**: Git integration for document versioning
+- **Review Workflows**: Automated review processes for translations
+- **Notification Systems**: Alerts for document updates and changes
+- **Progress Tracking**: Automated progress updates based on checklist completion
+
+### 📋 Checklist Management Best Practices
+
+#### Checklist Creation Strategy
+1. **Identify Tasks with Subtasks**: Only create checklists for tasks that have detailed subtasks
+2. **Meaningful Names**: Use descriptive checklist names that reflect the task purpose
+3. **Item Granularity**: Break down subtasks into specific, actionable checklist items
+4. **Sequential Organization**: Order checklist items logically (setup → implementation → testing → validation)
+5. **Progress Tracking**: Use checklists to track completion of individual subtasks
+
+#### Checklist Item Best Practices
+- **Actionable Items**: Each item should be a specific, testable action
+- **Clear Descriptions**: Use descriptive names that explain what needs to be done
+- **Logical Grouping**: Group related items together within the checklist
+- **Dependency Awareness**: Consider item dependencies when ordering
+- **Validation Criteria**: Include items that verify completion and quality
+
+#### Checklist Integration with Task Management
+- **Parent-Child Relationship**: Checklists belong to specific tasks
+- **Progress Visibility**: Checklist completion provides task progress insight
+- **Status Synchronization**: Task status can reflect checklist completion
+- **Reporting**: Use checklist data for progress reporting and analytics
+- **Team Collaboration**: Checklists enable team members to track individual contributions
+
+### 🗓️ Date Management Best Practices
+
+#### Date Calculation Strategy
+1. **Always Use Current Date**: Never hardcode dates in scripts or commands
+2. **Calculate Relative Dates**: Use date functions to calculate start and due dates
+3. **Consistent Format**: Use Unix milliseconds for ClickUp API compatibility
+4. **Timezone Awareness**: Consider timezone differences when calculating dates
+5. **Validation**: Verify calculated dates are reasonable and logical
+
+#### Date Calculation Examples
+```bash
+# Get current date
+CURRENT_DATE=$(date)
+
+# Calculate tomorrow (start date)
+START_DATE=$(date -v+1d +%s)000
+
+# Calculate 3 days from now (due date)
+DUE_DATE=$(date -v+3d +%s)000
+
+# Calculate end of week
+WEEK_END=$(date -v+fri +%s)000
+
+# Calculate end of month
+MONTH_END=$(date -v+1m -v1d -v-1d +%s)000
+```
+
+#### Date Validation
+- **Range Checking**: Ensure dates are in the future and reasonable
+- **Business Rules**: Consider business days, holidays, and working hours
+- **Consistency**: Ensure start dates are before due dates
+- **Flexibility**: Allow for date adjustments based on business needs
+- **Documentation**: Document date calculation logic for future reference

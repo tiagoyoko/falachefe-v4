@@ -1,0 +1,238 @@
+.cursor/rules — Memory Bank via MCP for clickup‑mcp‑server (EN)
+
+Purpose: Run with persistent context and orchestrate ClickUp tasks and docs via MCP. Golden rule for docs: always create the document first and then update its pages/content (create_document → create_document_page/update_document_page).
+
+⸻
+
+🔑 Trigger Commands
+	•	follow your custom instructions → Run Pre‑flight validation (a) and then the memory access pattern. Choose Planning (b) or Execution (c) mode.
+	•	initialize memory bank → Pre‑flight, create the local base structure (projectbrief.md, productContext.md, systemPatterns.md, techContext.md, activeContext.md, progress.md) and verify MCP connectivity.
+	•	update memory bank → Re‑read all context; update docs when scope change ≥25%, when new patterns appear, or on user request. Always mirror ClickUp IDs in progress.md.
+
+⸻
+
+🧩 Tools (from the official ClickUp MCP Server)
+
+All tools accept/return JSON. Name‑based lookup is supported almost everywhere (e.g., listName instead of listId). Dates are Unix ms or natural language (see below). Priorities are 1=Urgent … 4=Low. Custom Task IDs are supported in taskId.
+
+Task Management (core)
+	•	get_tasks – Retrieve tasks from a list. Required: listId or listName. Optional: archived, page, order_by, reverse, subtasks, statuses, include_closed, assignees, due_date_gt/lt.
+	•	get_task – Get a single task with global lookup. Required: taskId or taskName. Optional: listName (for disambiguation), subtasks.
+	•	get_task_comments – Fetch comments. Required: taskId or taskName. Optional: listName, start, startId.
+	•	create_task_comment – Add a comment. Required: commentText and (taskId or taskName+listName). Optional: notifyAll, assignee.
+	•	attach_task_file – Attach a file. Required: taskId or taskName, and either file_data (base64) or file_url (URL or local path). Optional: file_name, chunk params for large files.
+	•	create_task – Create a task. Required: name and (listId or listName). Optional: description, status, priority (1‑4), dueDate, startDate, parent, assignees, tags.
+	•	create_bulk_tasks – Create many at once. Required: tasks[]. Optional: listId/listName.
+	•	update_task – Modify a task. Required: taskId or taskName. Optional: name, description, status, priority, dueDate, startDate, etc.
+	•	update_bulk_tasks – Modify many. Required: tasks[] with identifiers.
+	•	delete_task – Delete one. Required: taskId (name/list optional).
+	•	delete_bulk_tasks – Delete many. Required: tasks[] with identifiers.
+	•	move_task – Move one to another list. Required: (taskId or taskName) and (listId or listName). Optional: sourceListName.
+	•	move_bulk_tasks – Move many. Required: tasks[] + target list.
+	•	duplicate_task – Copy to another list. Required: (taskId or taskName) and target list id/name. Optional: sourceListName.
+	•	get_workspace_tasks – Query tasks across the workspace with filters. Required: at least one filter (tags, list_ids, folder_ids, space_ids, statuses, assignees, date filters). Optional: page, order_by, reverse, detail_level (summary|detailed), subtasks.
+
+Natural‑language dates: use strings like "tomorrow at 9am", "end of week", "start of today", "next Monday 8am". Server converts to timestamps.
+
+Custom task IDs: taskId accepts ClickUp IDs or custom IDs (e.g., DEV-1234). Workspace must have custom IDs enabled.
+
+List Management
+	•	create_list – Required: name and (spaceId or spaceName). Optional: content, dueDate, priority, assignee.
+	•	create_list_in_folder – Required: name and (folderId or folderName). Optional: content, status.
+	•	get_list – Required: listId or listName.
+	•	update_list – Required: listId or listName. Optional: name, content, status.
+	•	delete_list – Required: listId or listName.
+
+Folder Management
+	•	create_folder – Required: name and (spaceId or spaceName). Optional: override_statuses.
+	•	get_folder – Required: folderId or folderName (with spaceId/spaceName if needed).
+	•	update_folder – Required: folderId or folderName. Optional: name, override_statuses, and optionally spaceId/spaceName.
+	•	delete_folder – Required: folderId or folderName (with space context if needed).
+
+Tag Management
+	•	get_space_tags – Required: spaceId or spaceName.
+	•	create_space_tag – Required: tagName and spaceId/spaceName. Optional: tagBg (hex), tagFg (hex), colorCommand (natural language: “dark blue”, “light green”).
+	•	update_space_tag – Required: tagName and spaceId/spaceName. Optional: newTagName, tagBg, tagFg, colorCommand.
+	•	delete_space_tag – Required: tagName and spaceId/spaceName.
+	•	add_tag_to_task / remove_tag_from_task – Required: tagName and (taskId or taskName+listName).
+
+Notes: tag names are case‑sensitive; ensure tag exists before adding (use get_space_tags / create_space_tag).
+
+Document Management (ClickUp Docs)
+	•	create_document – Required: name, parent { id, type }, visibility, create_page (boolean).
+	•	get_document – Required: documentId.
+	•	list_documents – No required params. Optional: id, creator, deleted, archived, parent_id, parent_type, limit, next_cursor.
+	•	list_document_pages – Required: documentId. Optional: max_page_depth (-1 for unlimited).
+	•	get_document_pages – Required: documentId, pageIds[]. Optional: content_format (text/md or text/html).
+	•	create_document_page – Required: documentId, name. Optional: content, sub_title, parent_page_id.
+	•	update_document_page – Required: documentId, pageId. Optional: name, sub_title, content, content_format (text/plain), content_edit_mode (replace|append|prepend).
+
+Doc flow (MANDATORY):
+	1.	Create the document with create_document (optionally with create_page: true).
+	2.	Then add/modify content using create_document_page (for new pages) and/or update_document_page (to replace/append/prepend). Never assume page IDs—fetch via list_document_pages or capture from responses.
+
+Workspace Organization
+	•	get_workspace_hierarchy – Returns full tree (spaces, folders, lists). Use it to validate names/IDs before acting.
+
+Member Management
+	•	get_workspace_members – List all members.
+	•	find_member_by_name – Find a member by name/email.
+	•	resolve_assignees – Convert names/emails to user IDs. You can pass mixed formats in task assignees.
+
+Error Handling & Rate Limiting
+	•	The server returns structured errors for missing params, not found, permission, and rate limiting. It retries with backoff when rate‑limited. Handle type fields like MISSING_PARAMETER, NOT_FOUND.
+
+⸻
+
+(a) 🛫 Pre‑flight Validation
+	1.	Local structure present: read, in order → projectbrief.md → productContext.md → systemPatterns.md → techContext.md → activeContext.md → progress.md → features/*.md / api/*.md / deployment/*.md (if any).
+	2.	Environment: ensure CLICKUP_TOKEN and MCP transport. For web clients, optionally enable SSE (ENABLE_SSE, SSE_PORT).
+	3.	Connectivity: fetch workspace tree (get_workspace_hierarchy) and team members (get_workspace_members) to prime name/ID resolution.
+	4.	Sanity checks: resolve lists/folders/spaces by name or ID; when ambiguous, prefer IDs or disambiguate with parent context.
+
+⸻
+
+(b) 📋 Planning Mode
+
+Inputs: full memory read + get_workspace_hierarchy + inventory of existing tasks/docs (get_workspace_tasks with filters; list_documents).
+
+Output: structured plan recorded in activeContext.md stating what tasks/docs will be created/updated, why, and where (space/folder/list or doc parent). Include chosen status, priority, tags, assignees, and relationships.
+
+Steps
+	1.	Gap analysis vs. projectbrief.md.
+	2.	Choose valid statuses/priorities (ClickUp defaults are fine if unspecified).
+	3.	Decide between create vs update for tasks and docs.
+	4.	Document decisions, target containers (space/folder/list), and any dependencies.
+
+⸻
+
+(c) ⚙️ Execution Mode (tool call patterns)
+
+✅ Tasks
+	•	Create:
+
+{
+  "tool": "create_task",
+  "args": {"listName": "Development Tasks", "name": "Implement Authentication", "priority": 1, "dueDate": 1703980800000,
+    "markdown_description": "## Requirements\n- OAuth2\n- JWT\n- Refresh tokens"}
+}
+
+	•	Update status/date:
+
+{"tool":"update_task","args": {"taskName":"Database Migration","startDate":"next Monday at 8am"}}
+
+	•	Workspace query (summaries first):
+
+{"tool":"get_workspace_tasks","args": {"tags":["bug"], "detail_level":"summary", "page":0}}
+
+	•	Move/duplicate: supply destination listId/listName; include sourceListName if disambiguation is needed.
+	•	Comments/files: use create_task_comment and attach_task_file (either file_data base64 or file_url).
+
+🗂️ Lists & Folders
+	•	Create list in space:
+
+{"tool":"create_list","args": {"spaceName":"Development","name":"Sprint Backlog"}}
+
+	•	Create list in folder:
+
+{"tool":"create_list_in_folder","args": {"folderName":"Project X","name":"Backend Tasks"}}
+
+	•	Create folder in space:
+
+{"tool":"create_folder","args": {"spaceName":"Development","name":"Active Projects"}}
+
+🏷️ Tags
+	•	Ensure tag exists → add to task:
+
+{"tool":"create_space_tag","args": {"spaceName":"Development","tagName":"important","colorCommand":"dark blue"}}
+
+{"tool":"add_tag_to_task","args": {"taskName":"Implement Authentication","listName":"Development Tasks","tagName":"important"}}
+
+📄 Documents (create → then update)
+	•	Create document (with initial page):
+
+{"tool":"create_document","args": {"name":"Technical Documentation",
+  "parent": {"id":"123456","type":4}, "visibility":"PUBLIC", "create_page": true}}
+
+	•	Find the page ID:
+
+{"tool":"list_document_pages","args": {"documentId":"8cdu22c-13153", "max_page_depth": 1}}
+
+	•	Update the page content (append):
+
+{"tool":"update_document_page","args": {"documentId":"8cdu22c-13153","pageId":"8cdu22c-36253",
+  "content":"# Getting Started\nPrereqs...\n","content_format":"text/plain","content_edit_mode":"append"}}
+
+	•	Or create a named page then update:
+
+{"tool":"create_document_page","args": {"documentId":"8cdu22c-13153","name":"Integration Guide","content":"Intro"}}
+
+{"tool":"update_document_page","args": {"documentId":"8cdu22c-13153","pageId":"<returnedId>","content":"Full guide...","content_format":"text/plain","content_edit_mode":"replace"}}
+
+👥 Members
+	•	Resolve assignees:
+
+{"tool":"resolve_assignees","args": {"assignees":["jdoe@example.com","Jane Smith",123]}}
+
+Use the resulting user IDs (or pass mixed identifiers directly in assignees).
+
+⸻
+
+(d) 📚 Documentation Updates (when to write back)
+	•	Scope change ≥25% (multiple tasks/docs, roadmap shift), new pattern discovered, explicit update memory bank, or ambiguity between plan and actual workspace state.
+	•	Order: re‑read all → update progress.md (source of truth with IDs/timestamps) → update activeContext.md (decisions/impact) → adjust context files (projectbrief.md, productContext.md, systemPatterns.md, techContext.md) if needed.
+
+progress.md entry template
+
+## 2025‑09‑29
+- create_document → **Technical Documentation** | id=`8cdu22c-13153` | parent.type=4
+- update_document_page → doc=`8cdu22c-13153` page=`8cdu22c-36253` | content=v1 appended
+- create_task → "Implement Authentication" | id=`123abc` | list="Development Tasks" | priority=1 | due=2024‑01‑01
+
+
+⸻
+
+(e) 🧠 Project Intelligence (.cursor/rules evolves)
+	•	Record patterns (default priorities/status by task type; tag conventions; doc naming: {Project}: {Subject}; page organization).
+	•	Track task relationships (subtasks via parent, blockers/duplicates if modeled in your flow).
+	•	Capture user preferences (spaces/folders/lists for each project, default visibility for docs).
+	•	Periodically validate with the user and apply automatically.
+
+⸻
+
+(f) 🗂️ Memory Bank Structure (local)
+
+flowchart TD
+    PB[projectbrief.md] --> PC[productContext.md]
+    PB --> SP[systemPatterns.md]
+    PB --> TC[techContext.md]
+    PC --> AC[activeContext.md]
+    SP --> AC
+    TC --> AC
+    AC --> P[progress.md]
+    subgraph CF[Custom]
+        CF1[features/*.md]
+        CF2[api/*.md]
+        CF3[deployment/*.md]
+    end
+    AC -.-> CF
+    CF -.-> P
+
+    style PB fill:#e066ff,stroke:#333,stroke-width:2px
+    style AC fill:#4d94ff,stroke:#333,stroke-width:2px
+    style P fill:#2eb82e,stroke:#333,stroke-width:2px
+
+Read before acting: top → down. Write back: reverse order (first progress.md). Always consult .cursor/rules while executing.
+
+⸻
+
+✅ Quick Checklist
+	1.	Pre‑flight: local files ✔, CLICKUP_TOKEN ✔, transport ✔, hierarchy/members fetched ✔.
+	2.	Inventory: get_workspace_tasks (filtered) + list_documents.
+	3.	Plan in activeContext.md (what/why/where).
+	4.	Execute:
+	•	Docs: create_document → list_document_pages/create_document_page → update_document_page.
+	•	Tasks: create_task/update_task/move_task/create_task_comment/attach_task_file.
+	•	Lists/Folders/Tags: create/update as needed.
+	5.	Record: progress.md with real IDs and timestamps; reference in activeContext.md.
+	6.	Learn: update .cursor/rules with new patterns.

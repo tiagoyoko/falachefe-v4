@@ -1,13 +1,33 @@
+"use client";
+
 import { ParallelConversations } from "@/components/chat/parallel-conversations";
+import { useAuth } from "@/hooks/use-auth";
+import { Lock } from "lucide-react";
 
 export default function ParallelChatPage() {
-  // Por enquanto, usando um userId fixo para demonstração
-  // Em produção, isso viria da autenticação
-  const userId = "demo-user-id";
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="container mx-auto px-4 py-12">Carregando...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto text-center">
+          <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h1 className="text-2xl font-bold mb-2">Acesso Restrito</h1>
+          <p className="text-muted-foreground">
+            Faça login para acessar o chat paralelo
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <ParallelConversations userId={userId} />
+      <ParallelConversations userId={user.id} />
     </div>
   );
 }

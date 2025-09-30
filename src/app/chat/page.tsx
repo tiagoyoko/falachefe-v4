@@ -27,7 +27,7 @@ export default function ChatPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <LLMChatInterface userId="placeholder-user-id" />
+      <LLMChatInterface userId={user.id} />
     </div>
   );
 }

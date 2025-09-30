@@ -15,11 +15,14 @@ export interface EnhancedAgentResponse {
   classification: MultiLayerClassification;
   priority: number;
   processingTime: number;
+  cacheHit: boolean;
+  abTestVariant?: string;
   metadata: {
     sessionId: string;
     userId: string;
     timestamp: Date;
     confidence: number;
+    reasoning: string[];
   };
 }
 
@@ -89,16 +92,17 @@ export async function processMessageWithMultiLayerClassification(
       .map(msg => `${msg.role}: ${msg.content}`)
       .concat(conversationHistory || []);
     
-    const { orchestrator, multiLayerClassifier } = getEnhancedOrchestrator();
+  const { orchestrator, multiLayerClassifier } = getEnhancedOrchestrator();
     
-    // 3. Classificação multi-camada com contexto
-    const classification = await multiLayerClassifier.classify(message, historyForClassification);
+    // 3. Classificação multi-camada com contexto e métricas
+    const classificationResult = await multiLayerClassifier.classify(
+      message, 
+      historyForClassification, 
+      userId, 
+      sessionInfo.sessionId
+    );
     
-    // 4. Determinar agente recomendado
-    const recommendedAgent = multiLayerClassifier.getRecommendedAgent(classification);
-    const priority = multiLayerClassifier.getPriority(classification);
-    
-    // 5. Processar com o agente recomendado usando sessão persistente
+    // 4. Processar com o agente recomendado usando sessão persistente
     const response = await orchestrator.routeRequest(message, userId, sessionInfo.sessionId);
     const messageContent = await extractAgentMessage(response);
     
@@ -106,22 +110,20 @@ export async function processMessageWithMultiLayerClassification(
     
     return {
       message: messageContent || "Resposta não disponível",
-      agentName: recommendedAgent,
-      success: true,
-      classification,
-      priority,
+      agentName: classificationResult.agentId,
+      success: classificationResult.success,
+      classification: classificationResult.classification,
+      priority: multiLayerClassifier.getPriority(classificationResult.classification),
       processingTime,
-      metadata: {
-        sessionId: sessionInfo.sessionId,
-        userId,
-        timestamp: new Date(),
-        confidence: classification.confidence,
-        sessionInfo: {
-          messageCount: sessionInfo.messageCount + 1,
-          currentTopic: conversationContext.currentTopic,
-          isNewSession: sessionInfo.messageCount === 0
-        }
-      },
+      cacheHit: classificationResult.cacheHit,
+      abTestVariant: classificationResult.abTestVariant,
+          metadata: {
+            sessionId: sessionInfo.sessionId,
+            userId,
+            timestamp: new Date(),
+            confidence: classificationResult.confidence,
+            reasoning: classificationResult.reasoning
+          },
     };
     
   } catch (error) {
@@ -149,11 +151,14 @@ export async function processMessageWithMultiLayerClassification(
       },
       priority: 1,
       processingTime,
+      cacheHit: false,
+      abTestVariant: undefined,
       metadata: {
         sessionId: fallbackSessionId,
         userId,
         timestamp: new Date(),
         confidence: 0.3,
+        reasoning: ["Fallback devido a erro no processamento"]
       },
     };
   }
@@ -190,25 +195,23 @@ export async function processMessageWithSpecificAgent(
     const messageContent = await extractAgentMessage(response);
     
     const processingTime = Date.now() - startTime;
-    const priority = multiLayerClassifier.getPriority(classification);
+    const priority = multiLayerClassifier.getPriority(classification.classification);
     
     return {
       message: messageContent || "Resposta não disponível",
       agentName,
       success: true,
-      classification,
+      classification: classification.classification,
       priority,
       processingTime,
+      cacheHit: classification.cacheHit,
+      abTestVariant: classification.abTestVariant,
       metadata: {
         sessionId: sessionInfo.sessionId,
         userId,
         timestamp: new Date(),
         confidence: classification.confidence,
-        sessionInfo: {
-          messageCount: sessionInfo.messageCount + 1,
-          currentTopic: conversationContext.currentTopic,
-          isNewSession: sessionInfo.messageCount === 0
-        }
+        reasoning: classification.reasoning
       },
     };
     
@@ -231,11 +234,14 @@ export async function processMessageWithSpecificAgent(
       },
       priority: 1,
       processingTime,
+      cacheHit: false,
+      abTestVariant: undefined,
       metadata: {
         sessionId: `${userId}_${Date.now()}`,
         userId,
         timestamp: new Date(),
         confidence: 0.3,
+        reasoning: ["Fallback devido a erro no processamento"]
       },
     };
   }
